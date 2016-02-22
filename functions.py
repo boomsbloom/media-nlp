@@ -48,9 +48,9 @@ def getVocab(texts):
     vocab = np.array(vectorizer.get_feature_names())
     return vocab, dtm
 
-def ldaModel(texts):
+def ldaModel(texts,topics,iters):
     vocab, dtm = getVocab(texts)
-    model = lda.LDA(n_topics=3, n_iter=500, random_state=1)
+    model = lda.LDA(n_topics=topics, n_iter=iters, random_state=1)
     model.fit(dtm)
     topic_word = model.topic_word_
     n_top_words = 20

@@ -8,22 +8,29 @@ scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_scri
             'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
             'texts/coen/obrother_script.txt']
 #scripts = ['texts/inglouriousbasterds_script.txt']
+
+#scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
+#            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
+#            'two.txt','wake.txt']
+#scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
+
 #f.nmfModel(scripts)
-#f.ldaModel(scripts)
-wordCounts = f.wordCount(scripts)
+f.ldaModel(scripts,3,500) #3,500
 
-offset = 5
-topWords = {}
-topCounts = {}
-common = []
-for script in scripts:
-    counts ={}
-    words = [word[0] for word in wordCounts[script]]
-    counts = [count[1] for count in wordCounts[script]]
-    topWords[script] = words[len(words)-offset:len(words)]
-    topCounts[script] = counts[len(counts)-offset:len(counts)]
-
-    print script, topWords[script], topCounts[script]
+# wordCounts = f.wordCount(scripts)
+#
+# offset = 5
+# topWords = {}
+# topCounts = {}
+# common = []
+# for script in scripts:
+#     counts ={}
+#     words = [word[0] for word in wordCounts[script]]
+#     counts = [count[1] for count in wordCounts[script]]
+#     topWords[script] = words[len(words)-offset:len(words)]
+#     topCounts[script] = counts[len(counts)-offset:len(counts)]
+#
+#     print script, topWords[script], topCounts[script]
 
 # for script in scripts:
 #     for sc in scripts:
