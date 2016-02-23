@@ -7,15 +7,23 @@ path = '/Users/jonathan/biglebowski_analysis/texts'
 scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
             'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
             'texts/coen/obrother_script.txt']
+scripts = [scripts[3]]
 #scripts = ['texts/inglouriousbasterds_script.txt']
-
+#scripts = ['atrophy.txt']
 #scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
 #            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
 #            'two.txt','wake.txt']
 #scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
 
 #f.nmfModel(scripts)
-f.ldaModel(scripts,3,500) #3,500
+#f.ldaModel(scripts,3,500) #3,500
+
+contexts = f.getKWIC(scripts, 9)
+f.makeSim(contexts)
+#print sim_df
+print contexts
+#for text in scripts:
+#    print (contexts[text])
 
 # wordCounts = f.wordCount(scripts)
 #

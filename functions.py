@@ -3,6 +3,7 @@ import operator
 import numpy as np
 import pandas as pd
 from scipy import stats, integrate
+import scipy.spatial.distance
 import matplotlib.pyplot as plt
 import seaborn as sns
 import lda
@@ -28,18 +29,54 @@ def preProcess(word):
     else:
         return False
 
-def getVocab(texts):
+def getDocuments(texts):
     words = []
     documents = []
     for text in texts:
         if text != "texts/.DS_Store":
             script = open(text, 'r')
-            print "Preprocessing words in %s...\n"%(text)
             for word in script.read().split():
-                word = preProcess(word) #processing each word
+                word = preProcess(word)
                 if word:
                     words.append(word)
-        documents.append((' ').join(words))
+        documents.append(words)
+    return documents
+
+
+def getKWIC(texts, n):  #returns dictionary for each document with list of list with n context words for each keyword in document
+    documents = getDocuments(texts)
+    contexts = {}
+    for j in range(len(documents)):
+        contexts[texts[j]] = ([documents[j][i:i+n] for i in range(len(documents[j])-(n-1))])
+
+    return contexts
+
+def makeSim(contexts): # need to adapt this to take in a list of words (each is a topic) and the contexts for just that list
+                        # so will need to create a subset of contexts corresponding to just those for the words in the topic
+                        # i.e. total words = 100, total word contexts = 100, words in topic = 18, word contexts for topic = 18
+                        # then create co-occurrence, calculate similarity matrix, run mds, plot
+    co_occurrence = np.zeros((len(documents[j]),len(documents[j])))
+
+    for w in range(len(contexts[texts[j]])):
+        for w2 in range(len(contexts[texts[j]])):
+            if documents[j][w2] in contexts[texts[j]][w]:
+                co_occurrence[w,w2] = 1
+
+    sim = scipy.spatial.distance.pdist(co_occurrence, 'euclidean')
+    sim_mat = scipy.spatial.distance.squareform(sim)
+
+    sim_df = pd.DataFrame(sim_mat, index=documents[j], columns=documents[j])
+
+    return sim_df
+    #plt.matshow(sim_df)
+    #plt.show()
+
+
+def getVocab(texts):
+    docs = getDocuments(texts)
+    documents = []
+    for doc in docs:
+        documents.append((' ').join(doc))
     vectorizer = CountVectorizer(stop_words = None,
                                  tokenizer = None,
                                  preprocessor = None) #only words with at least 20 usages..might be too high
