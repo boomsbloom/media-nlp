@@ -1,7 +1,7 @@
 import os
 import functions as f
 
-path = '/Users/jonathan/biglebowski_analysis/texts'
+#path = 'texts/gutenberg/'
 
 #scripts = sorted([os.path.join('texts/', fn) for fn in os.listdir(path)])
 #scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
@@ -13,15 +13,26 @@ path = '/Users/jonathan/biglebowski_analysis/texts'
 scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
             'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
             'two.txt','wake.txt']
+
+#scripts = sorted([os.path.join(fn) for fn in os.listdir(path)])
+#scripts = [path + script for script in scripts]
+
 scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
 
 #f.nmfModel(scripts)
 #f.ldaModel(scripts,3,500) #3,500
 nTopics = 5
-topics = f.ldaModel(scripts,nTopics,10) #500
-contexts = f.getnGrams(scripts, 5, topics, 'byTopic')
+nWords = 20
+nGrams = 5
+documents = f.getDocuments(scripts)
+topics = f.ldaModel(scripts,nTopics,10,nWords,documents) #500
+#print topics
+#contexts = f.getnGrams(scripts, 25, topics, documents, 'byTopic') #17 #5
+contexts = f.getnGrams(scripts, nGrams, topics, documents, 'general') #17 #5
+#print contexts
+#similarities = f.makeSim(topics,contexts,'byTopic')
+similarities = f.makeSim(documents,contexts,scripts,'general')
 
-similarities = f.makeSim(topics,contexts)
 f.mdsModel(similarities, topics)
 
 #print sim_df

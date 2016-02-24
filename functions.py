@@ -34,8 +34,8 @@ def getDocuments(texts):
     words = []
     documents = []
     for text in texts:
-        #print "Processing words in %s..." %(text) preprocessing twice right now which i dont need to do...
-        if text != "texts/.DS_Store":
+        print "Processing words in %s..." %(text) #preprocessing twice right now which i dont need to do...
+        if text != "texts/gutenberg/.DS_Store":
             script = open(text, 'r')
             for word in script.read().split():
                 word = preProcess(word)
@@ -45,10 +45,10 @@ def getDocuments(texts):
     return documents
 
 
-def getKWIC(texts, ngrams):
+def getKWIC(texts, ngrams, n):
     kwicdict = {}
     for text in texts:
-        keyindex = len(ngrams[text][0]) // 2 #generalize this! 5 word context isn't enough i think
+        keyindex = len(ngrams[text][0]) // int(n/2 + 0.5) #generalize this! 5 word context isn't enough i think
         dic = {}
         for k in ngrams[text]:
             if k[keyindex] not in dic:
@@ -59,35 +59,63 @@ def getKWIC(texts, ngrams):
     return kwicdict
 
 
-def getnGrams(texts, n, topics, option):
-    documents = getDocuments(texts)
+def getnGrams(texts, n, topics, documents, option):
     ngrams = {}
     for j in range(len(documents)):
         ngrams[texts[j]] = ([documents[j][i:i+n] for i in range(len(documents[j])-(n-1))])
         # this is imperfect because it doesn't count context for the last n-1 entries
     if option == 'byTopic':
-        return sortContext(getKWIC(texts, ngrams), documents, texts, topics)
+        return sortContext(getKWIC(texts, ngrams, n), documents, texts, topics)
     else:
-        return getKWIC(texts, ngrams)
+        return getKWIC(texts, ngrams, n)
 
 
-def makeSim(topics, contexts): #this makes similarity matrices for each topic
+def makeSim(wordLists, contexts, texts, option): #this makes similarity matrices for each topic
+                               # number of shared context words <--- within document and between
+
+                               # number of documents in common for each topic word <--- between docs
+    topics = wordLists
     co_occurrence = {}
     sim_mat = {}
-    for t in range(len(contexts)):
-        co_occurrence[t] = np.zeros((len(topics[t]), len(topics[t])))
-        for w3 in range(len(topics[t])):
-            try:
-                for w in range(len(contexts[0][topics[t][w3]][0])):
-                    for con in contexts[0][topics[t][w3]][0][w]:
-                        if con != topics[t][w3]:
-                            for w2 in range(len(topics[t])):
-                                if con == topics[t][w2]:
-                                    co_occurrence[t][w3,w2] = 1
-            except:
-                pass
-        sim = scipy.spatial.distance.pdist(co_occurrence[t], 'euclidean')
-        sim_mat[t] = scipy.spatial.distance.squareform(sim)
+    if option == 'byTopic':
+        for t in range(len(contexts)):
+            co_occurrence[t] = np.zeros((len(topics[t]), len(topics[t])))
+            for w3 in range(len(topics[t])):
+                try:
+                    for w in range(len(contexts[t][topics[t][w3]][0])):
+                        for con in contexts[t][topics[t][w3]][0][w]:
+                            if con != topics[t][w3]:
+                                for w2 in range(len(topics[t])):
+                                    commonWords = list(set(contexts[t][topics[t][w3]][0][w]).intersection(contexts[t][topics[t][w2]][0][w]))
+                                    co_occurrence[t][w3,w2] = len(commonWords) #number of shared content words
+                                    #if con == topics[t][w2]:
+                                    #    co_occurrence[t][w3,w2] = 1 #binary; whether topic word co-occurs with other in n-gram context
+                except:
+                    pass
+            #print co_occurrence[t]
+            sim = scipy.spatial.distance.pdist(co_occurrence[t], 'euclidean')
+            sim_mat[t] = scipy.spatial.distance.squareform(sim)
+
+    else:
+
+        # get number of shared context words for whole document
+
+        # for t in range(len(contexts)):
+        #
+        #     co_occurrence[t] = np.zeros((len(topics[t]), len(topics[t])))
+        #     for w1 in range(list(wordLists[t])):
+        #         for w2 in range(list(wordLists[t])):
+        #             try:
+        #                 print contexts[texts[t]][wordLists[t][w1]]
+        #             except:
+        #                 pass
+            #    for context in contexts[texts[t]]:
+            #        print len(contexts[texts[t]])
+                    #print t, word, context
+            #print len(wordLists[t])
+            #print len(contexts[texts[t]])
+            #try:
+
 
     #sim_df = pd.DataFrame(sim_mat[0], index=topics[0], columns=topics[0])
     #print sim_df
@@ -106,15 +134,14 @@ def mdsModel(sims, topics):
         pos = mds.fit(sims[t]).embedding_
         #rescale data
         npos = mds.fit_transform(sims[t], init=pos)
-
         fig, ax = plt.subplots()
         ax.scatter(npos[:, 0], npos[:, 1], s=len(topics[t]), c='b') #s=20 should be abstracted to number of words in topics
 
         for i, txt in enumerate(topics[t]):
             ax.annotate(txt, (npos[:, 0][i],npos[:, 1][i]))
 
-        sims[t] = sims[t].max() / sims[t] * 100
-        sims[t][np.isinf(sims[t])] = 0
+        #sims[t] = sims[t].max() / sims[t] * 100
+        #sims[t][np.isinf(sims[t])] = 0
 
         plt.show()
 
@@ -134,8 +161,7 @@ def sortContext(contexts, documents, texts, topics):
     return contextPerTopic
 
 
-def getVocab(texts):
-    docs = getDocuments(texts)
+def getVocab(texts, docs):
     documents = []
     for doc in docs:
         documents.append((' ').join(doc))
@@ -147,12 +173,12 @@ def getVocab(texts):
     vocab = np.array(vectorizer.get_feature_names())
     return vocab, dtm
 
-def ldaModel(texts,topics,iters):
-    vocab, dtm = getVocab(texts)
+def ldaModel(texts,topics,iters, nWords, documents):
+    vocab, dtm = getVocab(texts, documents)
     model = lda.LDA(n_topics=topics, n_iter=iters, random_state=1)
     model.fit(dtm)
     topic_word = model.topic_word_
-    n_top_words = 20
+    n_top_words = nWords
     topic_words = {}
     for i, topic_dist in enumerate(topic_word):
         topic_words[i] = np.array(vocab)[np.argsort(topic_dist)][:-n_top_words:-1]
