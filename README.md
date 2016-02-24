@@ -1,2 +1,2 @@
 # media-nlp
-natural language processing experiments for movie scripts
+natural language processing experiments with a goal of developing automated thematic analysis
