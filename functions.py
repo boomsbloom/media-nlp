@@ -11,7 +11,7 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn import decomposition
+from sklearn import decomposition, manifold
 
 
 def preProcess(word):
@@ -29,10 +29,12 @@ def preProcess(word):
     else:
         return False
 
+
 def getDocuments(texts):
     words = []
     documents = []
     for text in texts:
+        #print "Processing words in %s..." %(text) preprocessing twice right now which i dont need to do...
         if text != "texts/.DS_Store":
             script = open(text, 'r')
             for word in script.read().split():
@@ -43,33 +45,93 @@ def getDocuments(texts):
     return documents
 
 
-def getKWIC(texts, n):  #returns dictionary for each document with list of list with n context words for each keyword in document
+def getKWIC(texts, ngrams):
+    kwicdict = {}
+    for text in texts:
+        keyindex = len(ngrams[text][0]) // 2 #generalize this! 5 word context isn't enough i think
+        dic = {}
+        for k in ngrams[text]:
+            if k[keyindex] not in dic:
+                dic[k[keyindex]] = [k]
+            else:
+                dic[k[keyindex]].append(k)
+        kwicdict[text] = dic
+    return kwicdict
+
+
+def getnGrams(texts, n, topics, option):
     documents = getDocuments(texts)
-    contexts = {}
+    ngrams = {}
     for j in range(len(documents)):
-        contexts[texts[j]] = ([documents[j][i:i+n] for i in range(len(documents[j])-(n-1))])
+        ngrams[texts[j]] = ([documents[j][i:i+n] for i in range(len(documents[j])-(n-1))])
+        # this is imperfect because it doesn't count context for the last n-1 entries
+    if option == 'byTopic':
+        return sortContext(getKWIC(texts, ngrams), documents, texts, topics)
+    else:
+        return getKWIC(texts, ngrams)
 
-    return contexts
 
-def makeSim(contexts): # need to adapt this to take in a list of words (each is a topic) and the contexts for just that list
-                        # so will need to create a subset of contexts corresponding to just those for the words in the topic
-                        # i.e. total words = 100, total word contexts = 100, words in topic = 18, word contexts for topic = 18
-                        # then create co-occurrence, calculate similarity matrix, run mds, plot
-    co_occurrence = np.zeros((len(documents[j]),len(documents[j])))
+def makeSim(topics, contexts): #this makes similarity matrices for each topic
+    co_occurrence = {}
+    sim_mat = {}
+    for t in range(len(contexts)):
+        co_occurrence[t] = np.zeros((len(topics[t]), len(topics[t])))
+        for w3 in range(len(topics[t])):
+            try:
+                for w in range(len(contexts[0][topics[t][w3]][0])):
+                    for con in contexts[0][topics[t][w3]][0][w]:
+                        if con != topics[t][w3]:
+                            for w2 in range(len(topics[t])):
+                                if con == topics[t][w2]:
+                                    co_occurrence[t][w3,w2] = 1
+            except:
+                pass
+        sim = scipy.spatial.distance.pdist(co_occurrence[t], 'euclidean')
+        sim_mat[t] = scipy.spatial.distance.squareform(sim)
 
-    for w in range(len(contexts[texts[j]])):
-        for w2 in range(len(contexts[texts[j]])):
-            if documents[j][w2] in contexts[texts[j]][w]:
-                co_occurrence[w,w2] = 1
-
-    sim = scipy.spatial.distance.pdist(co_occurrence, 'euclidean')
-    sim_mat = scipy.spatial.distance.squareform(sim)
-
-    sim_df = pd.DataFrame(sim_mat, index=documents[j], columns=documents[j])
-
-    return sim_df
+    #sim_df = pd.DataFrame(sim_mat[0], index=topics[0], columns=topics[0])
+    #print sim_df
+    #print co_occurrence[0]
     #plt.matshow(sim_df)
     #plt.show()
+    return sim_mat
+
+
+def mdsModel(sims, topics):
+    seed = np.random.RandomState(seed=3)
+    for t in range(len(topics)):
+
+        mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
+                           dissimilarity="precomputed", n_jobs=1)
+        pos = mds.fit(sims[t]).embedding_
+        #rescale data
+        npos = mds.fit_transform(sims[t], init=pos)
+
+        fig, ax = plt.subplots()
+        ax.scatter(npos[:, 0], npos[:, 1], s=len(topics[t]), c='b') #s=20 should be abstracted to number of words in topics
+
+        for i, txt in enumerate(topics[t]):
+            ax.annotate(txt, (npos[:, 0][i],npos[:, 1][i]))
+
+        sims[t] = sims[t].max() / sims[t] * 100
+        sims[t][np.isinf(sims[t])] = 0
+
+        plt.show()
+
+
+def sortContext(contexts, documents, texts, topics):
+    contextPerTopic = {}
+    for text in texts:
+        for t in range(len(topics)):
+            contextPerWord = {}
+            for word in topics[t]:
+                con = []
+                for cWord in contexts[text]:
+                    if word == cWord:
+                        con.append(contexts[text][cWord])
+                contextPerWord[word] = con
+            contextPerTopic[t] = contextPerWord
+    return contextPerTopic
 
 
 def getVocab(texts):
@@ -91,12 +153,14 @@ def ldaModel(texts,topics,iters):
     model.fit(dtm)
     topic_word = model.topic_word_
     n_top_words = 20
+    topic_words = {}
     for i, topic_dist in enumerate(topic_word):
-        topic_words = np.array(vocab)[np.argsort(topic_dist)][:-n_top_words:-1]
-        print('Topic {}: {}'.format(i, ' '.join(topic_words)))
+        topic_words[i] = np.array(vocab)[np.argsort(topic_dist)][:-n_top_words:-1]
+        print('Topic {}: {}'.format(i, ' '.join(topic_words[i])))
     doc_topic = model.doc_topic_
     for i in range(len(texts)):
         print("{} (top topic: {})".format(texts[i], doc_topic[i].argmax()))
+    return topic_words
 
 
 def nmfModel(texts):

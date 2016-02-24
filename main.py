@@ -4,24 +4,29 @@ import functions as f
 path = '/Users/jonathan/biglebowski_analysis/texts'
 
 #scripts = sorted([os.path.join('texts/', fn) for fn in os.listdir(path)])
-scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
-            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
-            'texts/coen/obrother_script.txt']
-scripts = [scripts[3]]
+#scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
+#            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
+#            'texts/coen/obrother_script.txt']
+#scripts = [scripts[3]]
 #scripts = ['texts/inglouriousbasterds_script.txt']
 #scripts = ['atrophy.txt']
-#scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
-#            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
-#            'two.txt','wake.txt']
-#scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
+scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
+            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
+            'two.txt','wake.txt']
+scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
 
 #f.nmfModel(scripts)
 #f.ldaModel(scripts,3,500) #3,500
+nTopics = 5
+topics = f.ldaModel(scripts,nTopics,10) #500
+contexts = f.getnGrams(scripts, 5, topics, 'byTopic')
 
-contexts = f.getKWIC(scripts, 9)
-f.makeSim(contexts)
+similarities = f.makeSim(topics,contexts)
+f.mdsModel(similarities, topics)
+
 #print sim_df
-print contexts
+#print contexts
+#print topics
 #for text in scripts:
 #    print (contexts[text])
 
