@@ -1,39 +1,67 @@
 import os
 import functions as f
+from processing import getDocuments
+from contexts import getnGrams
+from occurrences import QbyContext
 
+#mat = h5py.File('texts/documents.mat','r')
+#data = mat.get('documents')
+#data = np.array(data)
+#print data.attrs.keys()
 #path = 'texts/gutenberg/'
 
 #scripts = sorted([os.path.join('texts/', fn) for fn in os.listdir(path)])
-#scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
-#            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
-#            'texts/coen/obrother_script.txt']
-#scripts = [scripts[3]]
+scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
+            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
+            'texts/coen/obrother_script.txt']
+scripts = [scripts[3]]
 #scripts = ['texts/inglouriousbasterds_script.txt']
 #scripts = ['atrophy.txt']
-scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
-            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
-            'two.txt','wake.txt']
+#scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
+#            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
+#            'two.txt','wake.txt']
 
 #scripts = sorted([os.path.join(fn) for fn in os.listdir(path)])
 #scripts = [path + script for script in scripts]
 
-scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
+#scripts = ['RatA_ON.txt','RatB_ON.txt','RatC_ON.txt','RatD_ON.txt']
+          #'RatA_OFF.txt','RatB_OFF.txt','RatC_OFF.txt','RatD_OFF.txt']
+
+#scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
 
 #f.nmfModel(scripts)
 #f.ldaModel(scripts,3,500) #3,500
 nTopics = 5
-nWords = 20
+nWords = 5
 nGrams = 5
-documents = f.getDocuments(scripts)
-topics = f.ldaModel(scripts,nTopics,10,nWords,documents) #500
-#print topics
-#contexts = f.getnGrams(scripts, 25, topics, documents, 'byTopic') #17 #5
-contexts = f.getnGrams(scripts, nGrams, topics, documents, 'general') #17 #5
-#print contexts
-#similarities = f.makeSim(topics,contexts,'byTopic')
-similarities = f.makeSim(documents,contexts,scripts,'general')
 
-f.mdsModel(similarities, topics)
+documents = getDocuments(scripts) # get dict with list of processed word/document
+#print doc_indices
+#print len(documents[scripts[0])
+contexts = getnGrams(scripts, nGrams, documents) # get dict with dict of context lists for each word in each document
+
+#topics = f.ldaModel(scripts,nTopics,10,nWords,documents) #500
+# print topics
+#
+# #networks = {}
+# for d in documents:
+#     temp_list = []
+#     for t in topics:
+#         index = 0
+#         for w in range(len(documents[d])):
+#             for tw in topics[t]:
+#                 if tw == documents[d][w]:
+#                     #networks[d] = [t:{tw:w}}]
+#                     print d, t, w, tw
+
+
+Q = QbyContext(documents, contexts, nGrams)
+print Q
+#similarities = f.makeSim(topics,contexts,scripts,'byTopic')
+#similarities = f.makeSim(documents,contexts,scripts,'general')
+
+#f.nmfModelwAnchors(scripts, documents, nTopics)
+#f.mdsModel(similarities, topics)
 
 #print sim_df
 #print contexts
