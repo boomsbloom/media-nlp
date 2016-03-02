@@ -15,12 +15,11 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import decomposition, manifold
 
-def makeSim(wordLists, contexts, texts, option):
-    #note: contexts is dictionary holding contexts for each topic word
+def makeSim(Q):
     '''
         Currently operates by computing number of shared context words
 
-        This function computes a normalized co_occurrence matrix based on the
+        This function receives a normalized co_occurrence matrix based on the
         number of shared context words as computed by getnGrams/getKWIC for
         each topic and then returns a euclidian distance similarity matrix
 
@@ -33,7 +32,6 @@ def makeSim(wordLists, contexts, texts, option):
     '''
 
     sim_mat = {}
-    Q = QbyKWIC(wordLists, contexts, texts)
     for q in range(len(Q)):
         sim = scipy.spatial.distance.pdist(Q[q], 'euclidean')
         sim_mat[q] = scipy.spatial.distance.squareform(sim)
@@ -100,13 +98,15 @@ def getVocab(texts, docs):
     for doc in docs:
         documents.append((' ').join(docs[doc]))
         #docs[doc].append((' ').join(docs[doc]))
-    print documents
+    #print documents
     vectorizer = CountVectorizer(stop_words = None,
                                  tokenizer = None,
-                                 preprocessor = None) #only words with at least 20 usages..might be too high
+                                 token_pattern =  '(?u)\\b\\w+\\b' , #use this to keep single characters
+                                 preprocessor = None)
     dtm = vectorizer.fit_transform(documents).toarray()
 
     vocab = np.array(vectorizer.get_feature_names())
+
     return vocab, dtm
 
 
@@ -192,8 +192,8 @@ def ldaModel(texts,topics,iters, nWords, documents):
         topic_words[i] = np.array(vocab)[np.argsort(topic_dist)][:-n_top_words:-1]
         print('Topic {}: {}'.format(i, ' '.join(topic_words[i])))
     doc_topic = model.doc_topic_
-    for i in range(len(texts)):
-        print("{} (top topic: {})".format(texts[i], doc_topic[i].argmax()))
+    #for i in range(len(texts)):
+    #    print("{} (top topic: {})".format(texts[i], doc_topic[i].argmax()))
     return topic_words
 
 

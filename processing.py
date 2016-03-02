@@ -14,6 +14,7 @@ def preProcess(word):
     punctuation = set(string.punctuation)
     word = word.lower() # make all words lowercase
     word = ''.join(char for char in word if char not in punctuation) #remove punctuation
+    word = word.rstrip()
     word = unicode(word, errors='ignore')
     #word = lemmatizer.lemmatize(word) #run lemmatizer and stemmer (questionable performance)
     #word = stemmer.stem(word)
@@ -22,17 +23,26 @@ def preProcess(word):
     else:
         return False
 
-def getDocuments(texts):
+def getDocuments(texts, delimiter):
     documents = {}
     for text in texts:
         index = 0
         words = []
         print "Processing words in %s..." %(text)
         script = open(text, 'r')
-        for word in script.read().split():
-            index += 1
-            word = preProcess(word)
-            if word:
-                words.append(word)
-        documents[text] = words
+        if delimiter == ',':
+            for word in script.read().split(','):
+                index += 1
+                word = preProcess(word)
+                if word:
+                    words.append(word)
+        else:
+            for word in script.read().split():
+                index += 1
+                word = preProcess(word)
+                if word:
+                    words.append(word)
+
+        if text != 'texts/mPFC_ofMRI/.DS_Store':
+            documents[text] = words
     return documents

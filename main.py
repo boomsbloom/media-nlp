@@ -2,19 +2,16 @@ import os
 import functions as f
 from processing import getDocuments
 from contexts import getnGrams
-from occurrences import QbyContext
+from occurrences import *
 
-#mat = h5py.File('texts/documents.mat','r')
-#data = mat.get('documents')
-#data = np.array(data)
-#print data.attrs.keys()
-#path = 'texts/gutenberg/'
+path = 'texts/mPFC_ofMRI/'
 
-#scripts = sorted([os.path.join('texts/', fn) for fn in os.listdir(path)])
-scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
-            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
-            'texts/coen/obrother_script.txt']
-scripts = [scripts[3]]
+scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
+
+#scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
+#            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
+#            'texts/coen/obrother_script.txt']
+#scripts = [scripts[3]]
 #scripts = ['texts/inglouriousbasterds_script.txt']
 #scripts = ['atrophy.txt']
 #scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
@@ -31,32 +28,33 @@ scripts = [scripts[3]]
 
 #f.nmfModel(scripts)
 #f.ldaModel(scripts,3,500) #3,500
-nTopics = 5
-nWords = 5
-nGrams = 5
 
-documents = getDocuments(scripts) # get dict with list of processed word/document
-#print doc_indices
-#print len(documents[scripts[0])
+# choose parameters
+delimiter = ',' #or 'none'
+nTopics = 2
+nWords = 8
+nGrams = 5
+nIters = 500
+
+#SR suggested vector quantization instead of SAX (so you just cluster, choose the top one, then make it your label)
+
+documents = getDocuments(scripts, delimiter) # get dict with list of processed word/document
+
 contexts = getnGrams(scripts, nGrams, documents) # get dict with dict of context lists for each word in each document
 
-#topics = f.ldaModel(scripts,nTopics,10,nWords,documents) #500
-# print topics
-#
-# #networks = {}
-# for d in documents:
-#     temp_list = []
-#     for t in topics:
-#         index = 0
-#         for w in range(len(documents[d])):
-#             for tw in topics[t]:
-#                 if tw == documents[d][w]:
-#                     #networks[d] = [t:{tw:w}}]
-#                     print d, t, w, tw
+topics = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
 
-
-Q = QbyContext(documents, contexts, nGrams)
+# THIS STEP TAKES FAR TOO LONG
+Q = QbyContextinTopic(topics, contexts, scripts, nWords) # get co-occurrence matrix based on context words for each topic
 print Q
+
+sim = f.makeSim(Q) # make similarity matrix from Q
+
+f.mdsModel(sim, topics) # run MDS and plot results
+
+#Q = QbyContextinDoc(documents, contexts, nGrams)
+#print Q
+
 #similarities = f.makeSim(topics,contexts,scripts,'byTopic')
 #similarities = f.makeSim(documents,contexts,scripts,'general')
 
