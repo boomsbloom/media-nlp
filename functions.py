@@ -192,9 +192,14 @@ def ldaModel(texts,topics,iters, nWords, documents):
         topic_words[i] = np.array(vocab)[np.argsort(topic_dist)][:-n_top_words:-1]
         print('Topic {}: {}'.format(i, ' '.join(topic_words[i])))
     doc_topic = model.doc_topic_
-    #for i in range(len(texts)):
-    #    print("{} (top topic: {})".format(texts[i], doc_topic[i].argmax()))
-    return topic_words
+
+    for i in range(len(texts)):
+        print("{} (top topic: {})".format(texts[i], doc_topic[i].argmax()))
+
+    probs = np.array(doc_topic)
+    meanProbs = np.mean(probs, axis=0)
+
+    return topic_words, meanProbs
 
 
 def wordCount(texts):
