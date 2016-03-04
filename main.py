@@ -38,7 +38,10 @@ delimiter = 'none' #or ',''
 nTopics = 20
 nWords = 3 #is actually n - 1 (so 3 for 2 words)
 nGrams = 10
-nIters = 500 #500
+nIters = 500
+
+nLabelOne = 5
+nLabelTwo = 7
 
 #SR suggested vector quantization instead of SAX (so you just cluster, choose the top one, then make it your label)
 
@@ -48,41 +51,55 @@ contexts = getnGrams(scripts, nGrams, documents) # get dict with dict of context
 
 topics = {}
 topicProbs = {}
+indivProbs = {}
 a = 0
-for i in range(20):
-    nWords = 3 + a
-    topics[i], topicProbs[i]  = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
+for i in range(1):
+    nWords = nWords + a
+    topics[i], topicProbs[i], indivProbs[i]  = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
     a += 1
 
-commonWords = [[]]
-for i in range(len(topics)):
-    if i != len(topics)-1:
-        max_index, max_value = max(enumerate(topicProbs[i]), key=operator.itemgetter(1))
-        max_index2, max_value2 = max(enumerate(topicProbs[i+1]), key=operator.itemgetter(1))
-        commonWords[0].append([word for word in topics[i][max_index] if word in set(topics[i+1][max_index2])])
-commonWords = (sum(sum(commonWords,[]),[]))
+labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
+f.svmModel(indivProbs[0], labels)
 
-wordcount={}
-for word in commonWords:
-    if word and word in wordcount:
-        wordcount[word] += 1
-    else:
-        wordcount[word] = 1
 
-sorted_wordcount = sorted(wordcount.items(), key=operator.itemgetter(1))
+###################################################################
+# plotting word usage across topics w/ different number of words  #
+###################################################################
 
-fig, ax = plt.subplots()
-index = np.arange(len(sorted_wordcount))
-words = []
-counts = []
-for i in range(len(sorted_wordcount)):
-    words.append(sorted_wordcount[i][0])
-    counts.append(sorted_wordcount[i][1])
+#
+# commonWords = [[]]
+# for i in range(len(topics)):
+#     if i != len(topics)-1:
+#         max_index, max_value = max(enumerate(topicProbs[i]), key=operator.itemgetter(1))
+#         max_index2, max_value2 = max(enumerate(topicProbs[i+1]), key=operator.itemgetter(1))
+#         commonWords[0].append([word for word in topics[i][max_index] if word in set(topics[i+1][max_index2])])
+# commonWords = (sum(sum(commonWords,[]),[]))
+#
+# wordcount={}
+# for word in commonWords:
+#     if word and word in wordcount:
+#         wordcount[word] += 1
+#     else:
+#         wordcount[word] = 1
+#
+# sorted_wordcount = sorted(wordcount.items(), key=operator.itemgetter(1))
+#
+# fig, ax = plt.subplots()
+# index = np.arange(len(sorted_wordcount))
+# words = []
+# counts = []
+# for i in range(len(sorted_wordcount)):
+#     words.append(sorted_wordcount[i][0])
+#     counts.append(sorted_wordcount[i][1])
+#
+# ax.bar(index,counts) #s=20 should be abstracted to number of words in topics
+# bar_width = 0.35
+# plt.xticks(index + bar_width, words)
+# plt.show()
 
-ax.bar(index,counts) #s=20 should be abstracted to number of words in topics
-bar_width = 0.35
-plt.xticks(index + bar_width, words)
-plt.show()
+###############################
+# plotting mean probabilities #
+###############################
 
 # fig, ax = plt.subplots()
 # index = np.arange(len(topicProbs))

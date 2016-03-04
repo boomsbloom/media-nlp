@@ -13,7 +13,10 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn import decomposition, manifold
+from sklearn import decomposition, manifold, svm, grid_search
+from sklearn.cross_validation import KFold
+
+#from gensim.models import hlmmodel
 
 def makeSim(Q):
     '''
@@ -181,8 +184,30 @@ def getAnchors(Qn, nTopics):
     return p, r
 
 
+def svmModel(data, labels):
+    param_grid = [
+      {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
+      {'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
+     ]
+
+    # run SVM with grid search for parameters and leave-one-out cross validation
+    kf = KFold(len(data), n_folds=len(data)) # loocv
+    for train, test in kf:
+        data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
+
+        svr = svm.SVC()
+        clf = grid_search.GridSearchCV(svr, param_grid)
+        clf.fit(data_train, label_train)
+
+        print label_test, clf.predict(data_test)
+
+
+
 def ldaModel(texts,topics,iters, nWords, documents):
     vocab, dtm = getVocab(texts, documents)
+
+    #hdp = HdpModel(corpus, id2word)
+    #hdp.print_topics(topics=20, topn=10)
     model = lda.LDA(n_topics=topics, n_iter=iters, random_state=1)
     model.fit(dtm)
     topic_word = model.topic_word_
@@ -199,7 +224,7 @@ def ldaModel(texts,topics,iters, nWords, documents):
     probs = np.array(doc_topic)
     meanProbs = np.mean(probs, axis=0)
 
-    return topic_words, meanProbs
+    return topic_words, meanProbs, probs
 
 
 def wordCount(texts):
