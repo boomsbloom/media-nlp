@@ -58,6 +58,9 @@ for i in range(1):
     topics[i], topicProbs[i], indivProbs[i]  = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
     a += 1
 
+# WRITE CLUSTERING CODE
+#f.docCluster(indivProbs[0])
+
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 f.svmModel(indivProbs[0], labels)
 

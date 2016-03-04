@@ -15,8 +15,14 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import decomposition, manifold, svm, grid_search
 from sklearn.cross_validation import KFold
+from sklearn.cluster import KMeans
 
 #from gensim.models import hlmmodel
+
+def docCluster(topicProbs, label):
+        dist = scipy.spatial.distance.pdist(topicProbs, 'euclidean')
+        dist_mat = scipy.spatial.distance.squareform(dist)
+        print dist_mat
 
 def makeSim(Q):
     '''
@@ -192,6 +198,7 @@ def svmModel(data, labels):
 
     # run SVM with grid search for parameters and leave-one-out cross validation
     kf = KFold(len(data), n_folds=len(data)) # loocv
+    acc = 0
     for train, test in kf:
         data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
@@ -199,8 +206,12 @@ def svmModel(data, labels):
         clf = grid_search.GridSearchCV(svr, param_grid)
         clf.fit(data_train, label_train)
 
+        if label_test == clf.predict(data_test):
+            acc += 1
+
         print label_test, clf.predict(data_test)
 
+    print "ACC: ", Decimal(acc)/Decimal(len(data))
 
 
 def ldaModel(texts,topics,iters, nWords, documents):
