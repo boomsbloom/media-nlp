@@ -1,14 +1,15 @@
 import os
 import functions as f
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 import operator
 from processing import getDocuments
 from contexts import getnGrams
 from occurrences import *
+import scipy
 
 #path = 'texts/mPFC_ofMRI/'
-path = 'texts/hippo_ofmri/subjects'
+path = 'texts/AD_TD_full_4letters/'
 
 scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
@@ -34,16 +35,20 @@ scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 #f.ldaModel(scripts,3,500) #3,500
 
 # choose parameters
+
 delimiter = 'none' #or ',''
-nTopics = 20
+nTopics = 10
 nWords = 3 #is actually n - 1 (so 3 for 2 words)
 nGrams = 10
 nIters = 500
 
-nLabelOne = 5
-nLabelTwo = 7
+tLimit = 150
 
-#SR suggested vector quantization instead of SAX (so you just cluster, choose the top one, then make it your label)
+nLabelOne = 30
+nLabelTwo = 30
+
+#runClassification = True
+runClassification = False # <--- plot the similarities based on whether they were most similar to TD or AD
 
 documents = getDocuments(scripts, delimiter) # get dict with list of processed word/document
 
@@ -54,16 +59,31 @@ topicProbs = {}
 indivProbs = {}
 a = 0
 for i in range(1):
-    nWords = nWords + a
-    topics[i], topicProbs[i], indivProbs[i]  = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
-    a += 1
+   nWords = nWords + a
+   #topics[i], topicProbs[i], indivProbs[i]  = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
+   indivProbs = f.hdpModel(scripts, documents, tLimit, runClassification)
+   a += 1
 
-# WRITE CLUSTERING CODE
+#WRITE CLUSTERING CODE
 #f.docCluster(indivProbs[0])
 
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
-f.svmModel(indivProbs[0], labels)
+data = np.asarray(indivProbs) #for HDP
+#data = np.asarray(indivProbs[0]) #for LDA
+#data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo) # <---- sanity check data set (should be ACC: 1)
 
+# timeseries = scipy.io.loadmat('texts/ADTD_timeseries.mat')
+# print len(timeseries['TDs'][0][0][3])
+
+print len(data)
+#
+print "Running SVM..."
+svmACC = f.svmModel(data, labels)
+print "svm ACC:", svmACC
+
+print "Running RF..."
+rfACC = f.rfModel(data, labels)
+print "rf ACC:", rfACC
 
 ###################################################################
 # plotting word usage across topics w/ different number of words  #

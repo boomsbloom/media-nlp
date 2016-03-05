@@ -43,6 +43,6 @@ def getDocuments(texts, delimiter):
                 if word:
                     words.append(word)
 
-        if text != 'texts/mPFC_ofMRI/.DS_Store':
+        if text != 'texts/AD_TD_half_4letters/.DS_Store':
             documents[text] = words
     return documents
