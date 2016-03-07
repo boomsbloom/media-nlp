@@ -6,35 +6,17 @@ import operator
 from processing import getDocuments
 from contexts import getnGrams
 from occurrences import *
+from supervised import *
+from unsupervised import *
 import scipy
 
 #path = 'texts/mPFC_ofMRI/'
-path = 'texts/AD_TD_full_4letters/'
+path = 'texts/AD_TD_full_3letters/'
 
 scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
-#scripts = ['texts/coen/aseriousman_script.txt','texts/coen/burnafterreading_script.txt',
-#            'texts/coen/truegrit_script.txt','texts/coen/biglebowski_script.txt',
-#            'texts/coen/obrother_script.txt']
-#scripts = [scripts[3]]
-#scripts = ['texts/inglouriousbasterds_script.txt']
-#scripts = ['atrophy.txt']
-#scripts = ['atrophy.txt','bear.txt','epilogue.txt','kettering.txt',
-#            'prologue.txt','shiva.txt','sylvia.txt','thirteen.txt',
-#            'two.txt','wake.txt']
-
-#scripts = sorted([os.path.join(fn) for fn in os.listdir(path)])
-#scripts = [path + script for script in scripts]
-
-#scripts = ['RatA_ON.txt','RatB_ON.txt','RatC_ON.txt','RatD_ON.txt']
-          #'RatA_OFF.txt','RatB_OFF.txt','RatC_OFF.txt','RatD_OFF.txt']
-
-#scripts = sorted([os.path.join('texts/antlers_hospice/',song) for song in scripts])
-
-#f.nmfModel(scripts)
-#f.ldaModel(scripts,3,500) #3,500
-
 # choose parameters
+nModels = 10
 
 delimiter = 'none' #or ',''
 nTopics = 10
@@ -42,13 +24,14 @@ nWords = 3 #is actually n - 1 (so 3 for 2 words)
 nGrams = 10
 nIters = 500
 
-tLimit = 150
+tLimit = 10
 
-nLabelOne = 30
-nLabelTwo = 30
+nLabelOne = 40 #30
+nLabelTwo = 40 #30 for class on doc sims
+labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 
-#runClassification = True
-runClassification = False # <--- plot the similarities based on whether they were most similar to TD or AD
+runClassification = True
+#runClassification = False # <--- plot the similarities based on whether they were most similar to TD or AD
 
 documents = getDocuments(scripts, delimiter) # get dict with list of processed word/document
 
@@ -57,33 +40,52 @@ contexts = getnGrams(scripts, nGrams, documents) # get dict with dict of context
 topics = {}
 topicProbs = {}
 indivProbs = {}
+svmACC = [0] * nModels
+rfACC = [0] * nModels
+kACC = [0] * nModels
 a = 0
-for i in range(1):
+for i in range(nModels):
+   print "=================================="
+   print "Running Model # %i" %(i+1)
+   print "=================================="
+
    nWords = nWords + a
-   #topics[i], topicProbs[i], indivProbs[i]  = f.ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
-   indivProbs = f.hdpModel(scripts, documents, tLimit, runClassification)
+   #topics[i], topicProbs[i], indivProbs[i]  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
+   print "Topic Modeling..."
+   print " "
+   indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
    a += 1
 
-#WRITE CLUSTERING CODE
-#f.docCluster(indivProbs[0])
+   data = np.asarray(indivProbs[i])
+   #data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo) # <---- sanity check data set (should be ACC: 1)
 
-labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
-data = np.asarray(indivProbs) #for HDP
-#data = np.asarray(indivProbs[0]) #for LDA
-#data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo) # <---- sanity check data set (should be ACC: 1)
+   ###### CLUSTERING #######
+   print "Clustering..."
+   kACC[i] = kCluster(data, labels)
+   print "K_means ACC:", kACC[i]
+   print " "
+   ###### CLASSIFICATION #######
 
-# timeseries = scipy.io.loadmat('texts/ADTD_timeseries.mat')
-# print len(timeseries['TDs'][0][0][3])
+   # timeseries = scipy.io.loadmat('texts/ADTD_timeseries.mat')
+   # print len(timeseries['TDs'][0][0][3])
 
-print len(data)
-#
-print "Running SVM..."
-svmACC = f.svmModel(data, labels)
-print "svm ACC:", svmACC
+   print "Running SVM..."
+   svmACC[i] = svmModel(data, labels)
+   print "svm ACC:", svmACC[i]
+   print " "
 
-print "Running RF..."
-rfACC = f.rfModel(data, labels)
-print "rf ACC:", rfACC
+   print "Running RF..."
+   rfACC[i] = rfModel(data, labels)
+   print "rf ACC:", rfACC[i]
+   print " "
+
+print "=================================="
+print "Mean Values for %i Models"%(i+1)
+print "=================================="
+print "kmeans acc mean:", np.mean(kACC)
+print "svm acc mean:", np.mean(svmACC)
+print "rf acc mean:", np.mean(rfACC)
+
 
 ###################################################################
 # plotting word usage across topics w/ different number of words  #

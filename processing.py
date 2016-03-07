@@ -28,7 +28,7 @@ def getDocuments(texts, delimiter):
     for text in texts:
         index = 0
         words = []
-        print "Processing words in %s..." %(text)
+        #print "Processing words in %s..." %(text)
         script = open(text, 'r')
         if delimiter == ',':
             for word in script.read().split(','):

@@ -13,13 +13,8 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn import decomposition, manifold, svm, grid_search
-from sklearn.cross_validation import KFold
-from sklearn.cluster import KMeans
+from sklearn import decomposition, manifold, svm, grid_search, cluster
 from sklearn.ensemble import RandomForestClassifier
-from gensim import corpora, models, similarities
-
-#from gensim.models import hlmmodel
 
 def docCluster(topicProbs, label):
         dist = scipy.spatial.distance.pdist(topicProbs, 'euclidean')
@@ -191,122 +186,6 @@ def getAnchors(Qn, nTopics):
         q[t], r[t], p[t] = scipy.linalg.qr(Qn[t],pivoting=True)
     return p, r
 
-
-def svmModel(data, labels):
-    param_grid = [
-      {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
-      {'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
-     ]
-
-    # run SVM with grid search for parameters and leave-one-out cross validation
-    kf = KFold(len(data), n_folds=len(data)) # loocv
-    acc = 0
-    for train, test in kf:
-       data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
-
-       svr = svm.SVC()
-       clf = grid_search.GridSearchCV(svr, param_grid)
-       clf.fit(data_train, label_train)
-
-       if label_test == clf.predict(data_test):
-           acc += 1
-
-       print label_test, clf.predict(data_test)
-
-    return Decimal(acc)/Decimal(len(data))
-
-
-
-def rfModel(data, labels):
-
-    kf = KFold(len(data), n_folds=len(data)) # loocv
-    acc = 0
-    for train, test in kf:
-       data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
-
-       rf = RandomForestClassifier(n_estimators=100)
-       rf.fit(data_train, label_train)
-
-       if label_test == rf.predict(data_test):
-           acc += 1
-
-       print label_test, rf.predict(data_test)
-
-    return Decimal(acc)/Decimal(len(data))
-
-def hdpModel(texts, documents, tLimit, forClass):
-    def getKey(item):
-        return item[1]
-
-    textList = []
-    for text in texts:
-        textList.append(documents[text])
-
-    if forClass:
-
-        dictionary = corpora.Dictionary(textList)
-        corpus = [dictionary.doc2bow(text) for text in textList]
-
-
-        hdp = models.HdpModel(corpus, dictionary, T=tLimit)
-        topicProbs = [[]] * len(texts)
-        for text in range(len(texts)):
-            topicProb = [0] * tLimit
-            text_bow = dictionary.doc2bow(textList[text])
-            print hdp[text_bow]
-            for prob in hdp[text_bow]:
-                topicProb[prob[0]] = prob[1]
-            topicProbs[text] = topicProb
-        topics = hdp.print_topics(topics=151, topn=10)
-        print topics
-
-        return topicProbs
-
-    else:
-        training_indices = range(10) + range(40,50)
-        trainingList = [textList[x] for x in training_indices]
-        testing_indices = range(10,40) + range(50,len(textList))
-        testingList = [textList[x] for x in testing_indices]
-
-        dictionary = corpora.Dictionary(trainingList)
-        corpus = [dictionary.doc2bow(text) for text in trainingList]
-
-        hdp = models.HdpModel(corpus, dictionary, T=tLimit)
-
-        #transform corpus to hdp space and index it
-        index = similarities.MatrixSimilarity(hdp[corpus])
-
-        topicSims = [[]] * len(testingList)
-        for text in range(len(testingList)):
-            text_bow = dictionary.doc2bow(testingList[text])
-            text_hdp = hdp[text_bow]
-            sims = index[text_hdp]
-            topicSims[text] = sims
-
-        return topicSims
-
-
-
-def ldaModel(texts,topics,iters, nWords, documents):
-    vocab, dtm = getVocab(texts, documents)
-
-    model = lda.LDA(n_topics=topics, n_iter=iters, random_state=1)
-    model.fit(dtm)
-    topic_word = model.topic_word_
-    n_top_words = nWords
-    topic_words = {}
-    for i, topic_dist in enumerate(topic_word):
-        topic_words[i] = np.array(vocab)[np.argsort(topic_dist)][:-n_top_words:-1]
-        print('Topic {}: {}'.format(i, ' '.join(topic_words[i])))
-    doc_topic = model.doc_topic_
-
-    for i in range(len(texts)):
-        print("{} (top topic: {})".format(texts[i], doc_topic[i].argmax()))
-
-    probs = np.array(doc_topic)
-    meanProbs = np.mean(probs, axis=0)
-
-    return topic_words, meanProbs, probs
 
 
 def wordCount(texts):
