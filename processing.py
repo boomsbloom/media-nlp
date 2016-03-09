@@ -23,26 +23,39 @@ def preProcess(word):
     else:
         return False
 
-def getDocuments(texts, delimiter):
+def getDocuments(texts, delimiter, corpus, textNames):
     documents = {}
-    for text in texts:
-        index = 0
-        words = []
-        #print "Processing words in %s..." %(text)
-        script = open(text, 'r')
-        if delimiter == ',':
-            for word in script.read().split(','):
-                index += 1
-                word = preProcess(word)
-                if word:
-                    words.append(word)
-        else:
-            for word in script.read().split():
-                index += 1
-                word = preProcess(word)
-                if word:
-                    words.append(word)
+    if not corpus:
+        for text in texts:
+            index = 0
+            words = []
+            #print "Processing words in %s..." %(text)
+            script = open(text, 'r')
+            if delimiter == ',':
+                for word in script.read().split(','):
+                    index += 1
+                    word = preProcess(word)
+                    if word:
+                        words.append(word)
+            else:
+                for word in script.read().split():
+                    index += 1
+                    word = preProcess(word)
+                    if word:
+                        words.append(word)
 
-        if text != 'texts/AD_TD_half_4letters/.DS_Store':
-            documents[text] = words
+            if text != 'texts/AD_TD_full_4letters/.DS_Store':
+                documents[text] = words
+
+    else:
+        script = open(texts, 'r')
+        index = 0
+        for doc in script.read().split('\n'):
+            words = []
+            for word in doc.split(','):
+                words.append(word)
+            if textNames[index] != 'texts/AD_TD_full_4letters/.DS_Store':
+                documents[textNames[index]] = words
+            index += 1
+
     return documents

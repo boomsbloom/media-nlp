@@ -26,7 +26,7 @@ def svmModel(data, labels, nFolds):
        if label_test == clf.predict(data_test):
            acc += 1
 
-       print label_test, clf.predict(data_test)
+       #print label_test, clf.predict(data_test)
 
     return Decimal(acc)/Decimal(len(data))
 
@@ -45,6 +45,6 @@ def rfModel(data, labels, nFolds):
        if label_test == rf.predict(data_test):
            acc += 1
 
-       print label_test, rf.predict(data_test)
+       #print label_test, rf.predict(data_test)
 
     return Decimal(acc)/Decimal(len(data))

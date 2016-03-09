@@ -22,7 +22,6 @@ def hdpModel(texts, documents, tLimit, forClass):
         dictionary = corpora.Dictionary(textList)
         corpus = [dictionary.doc2bow(text) for text in textList]
 
-
         hdp = models.HdpModel(corpus, dictionary, T=tLimit,kappa=0.6)
         topicProbs = [[]] * len(texts)
         for text in range(len(texts)):

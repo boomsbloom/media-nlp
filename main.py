@@ -1,43 +1,79 @@
-import os
+import os, operator, scipy
 import functions as f
 #import matplotlib.pyplot as plt
 import numpy as np
-import operator
 from processing import getDocuments
 from contexts import getnGrams
 from occurrences import *
 from supervised import *
 from unsupervised import *
-import scipy
 
-#path = 'texts/mPFC_ofMRI/'
-path = 'texts/AD_TD_full_3letters/'
+#################################################
+################ LOAD INPUT DATA ################
+#################################################
 
-scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
+path = 'texts/AD_TD_full_4letters/'
+textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
-# choose parameters
-nModels = 1
+# choose whether input is one document with your whole corpus in it (to be split up)
+# ..or whether input is multiple documents
+isCorpus = True
+#isCorpus = False
 
-delimiter = 'none' #or ',''
-nTopics = 10
-nWords = 3 #is actually n - 1 (so 3 for 2 words)
-nGrams = 10
-nIters = 500
+if isCorpus:
+    scripts = 'texts/full_4letter_phrase_corpus.txt'
+else:
+    scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
+    if len(scripts) > 80: #removing .DS_Store
+       scripts = scripts[1:len(scripts)]
 
-tLimit = 10
+#################################################
+############### CHOOSE PARAMETERS ###############
+#################################################
 
-nLabelOne = 40 #30
-nLabelTwo = 40 #30 for class on doc sims
+nModels = 10 # number of times you want modeling to run
+nGrams = 10 # number of words in context ..only if running context calculation
+
+# for LDA
+runLDA = False # whether to run LDA
+delimiter = 'none' #or ',' type of delimiter between your words in the document
+nTopics = 10 # number of topics to create
+nWords = 3 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nIters = 500 # number of iterations for sampling
+
+# for HDP
+runHDP = True # whether to run HDP
+tLimit = 150 # limit on number of topics to look for (default is 150)
+# note: larger the limit on topics the more sparse the classification matrix
+
+# for raw timeseries classification
+runTimeseries = False #whether to run classification on just the timeseries (no topic modeling)
+
+# for classification
+nLabelOne = 40 #number of TDs
+nLabelTwo = 40 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
+nFolds = len(labels) #leave-one-out
 
-nFolds = len(labels) #len(labels) for leave-one-out
+runClassification = True # run classification on topic probabilities
+#runClassification = False # OPTION ONLY FOR HDP ...run classification on document similarities
 
-runClassification = True
-#runClassification = False # <--- plot the similarities based on whether they were most similar to TD or AD
+################################################
+############## PROCESS DATA ####################
+################################################
 
-documents = getDocuments(scripts, delimiter) # get dict with list of processed word/document
+# Create dictionary with list of processed words for each document key
+documents = getDocuments(scripts, delimiter, isCorpus, textNames)
 
-contexts = getnGrams(scripts, nGrams, documents) # get dict with dict of context lists for each word in each document
+if isCorpus:
+    scripts = textNames[1:len(textNames)]
+
+# Create dictionary with context lists for each word in each document
+#contexts = getnGrams(scripts, nGrams, documents)
+
+################################################
+############### RUN MODELS #####################
+################################################
 
 topics = {}
 topicProbs = {}
@@ -48,61 +84,72 @@ kACC = [0] * nModels
 a = 0
 for i in range(nModels):
    print "=================================="
-   print "Running Model # %i" %(i+1)
-   print "=================================="
+   print "Running Models for Iteration # %i" %(i+1)
+   print "==================================\n"
+   print "Topic Modeling...\n"
+   if runLDA:
 
-   nWords = nWords + a
-   #topics[i], topicProbs[i], indivProbs[i]  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
-   print "Topic Modeling..."
-   print " "
-   indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
-   a += 1
+       nWords = nWords + a
+       topics[i], topicProbs[i], indivProbs[i]  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
+       a += 1
+       data = np.asarray(indivProbs[i])
 
-   data = np.asarray(indivProbs[i])
-   #data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo) # <---- sanity check data set (should be ACC: 1)
+   elif runHDP:
 
-   #### FOR RAW TIMESERIES ####
-   # timeseries = scipy.io.loadmat('texts/ADTD_timeseries.mat')
-   # #print len(timeseries['TDs'][0])
-   # #print (timeseries['ADs'][0])
-   # #data = timeseries['TDs'][0]#, timeseries['ADs'][0]))
-   #
-   # indiv = np.zeros((4, len(timeseries['ADs'][0][0][0])))
-   # data = np.asarray([indiv] * len(labels))
-   # for d in range(len(labels)):
-   #     if d <= 39:
-   #         data[d] = timeseries['TDs'][0][d]
-   #     else:
-   #         data[d] = timeseries['ADs'][0][d-40]
-   #
-   # data_size = len(data)
-   # data = data.reshape(data_size,-1)
+       indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
+       data = np.asarray(indivProbs[i])
 
-   #labels = np.asarray([0] * nLabelOne)
+   elif runTimeseries:
+
+       #### FOR RAW TIMESERIES ####
+       timeseries = scipy.io.loadmat('texts/ADTD_timeseries.mat')
+       #print len(timeseries['TDs'][0])
+       #print (timeseries['ADs'][0])
+       #data = timeseries['TDs'][0]#, timeseries['ADs'][0]))
+
+       indiv = np.zeros((4, len(timeseries['ADs'][0][0][0])))
+       data = np.asarray([indiv] * len(labels))
+       for d in range(len(labels)):
+           if d <= 39:
+               data[d] = timeseries['TDs'][0][d]
+           else:
+               data[d] = timeseries['ADs'][0][d-40]
+
+       data_size = len(data)
+       data = data.reshape(data_size,-1)
+
+   else:
+       #sanity check data set (should be ACC: 1)
+       data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo)
+
+
+   print "Done.\n"
+
    ###### CLUSTERING #######
 
-   # print "Clustering..."
-   # kACC[i] = kCluster(data, labels)
-   # print "K_means ACC:", kACC[i]
-   # print " "
-#    ###### CLASSIFICATION #######
-#
-   print "Running SVM..."
-   svmACC[i] = svmModel(data, labels, nFolds)
-   print "svm ACC:", svmACC[i]
-   print " "
+   if not runTimeseries:
+       print "Clustering...\n"
+       kACC[i] = kCluster(data, labels)
+       print "K_means ACC:", kACC[i]
+       print " "
 
-   print "Running RF..."
+   ###### CLASSIFICATION #######
+
+   print "Running SVM...\n"
+   svmACC[i] = svmModel(data, labels, nFolds)
+   print "svm ACC:", svmACC[i], "\n"
+
+   print "Running RF...\n"
    rfACC[i] = rfModel(data, labels, nFolds)
-   print "rf ACC:", rfACC[i]
-   print " "
-#
-# print "=================================="
-# print "Mean Values for %i Models"%(i+1)
-# print "=================================="
-# print "kmeans acc mean:", np.mean(kACC)
-# print "svm acc mean:", np.mean(svmACC)
-# print "rf acc mean:", np.mean(rfACC)
+   print "rf ACC:", rfACC[i], "\n"
+
+print "=================================="
+print "Mean Values for %i Models"%(i+1)
+print "==================================\n"
+if not runTimeseries:
+    print "kmeans acc mean:", np.mean(kACC)
+print "svm acc mean:", np.mean(svmACC)
+print "rf acc mean:", np.mean(rfACC)
 
 
 ###################################################################
