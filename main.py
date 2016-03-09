@@ -16,7 +16,7 @@ path = 'texts/AD_TD_full_3letters/'
 scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose parameters
-nModels = 10
+nModels = 1
 
 delimiter = 'none' #or ',''
 nTopics = 10
@@ -29,6 +29,8 @@ tLimit = 10
 nLabelOne = 40 #30
 nLabelTwo = 40 #30 for class on doc sims
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
+
+nFolds = len(labels) #len(labels) for leave-one-out
 
 runClassification = True
 #runClassification = False # <--- plot the similarities based on whether they were most similar to TD or AD
@@ -59,32 +61,48 @@ for i in range(nModels):
    data = np.asarray(indivProbs[i])
    #data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo) # <---- sanity check data set (should be ACC: 1)
 
-   ###### CLUSTERING #######
-   print "Clustering..."
-   kACC[i] = kCluster(data, labels)
-   print "K_means ACC:", kACC[i]
-   print " "
-   ###### CLASSIFICATION #######
-
+   #### FOR RAW TIMESERIES ####
    # timeseries = scipy.io.loadmat('texts/ADTD_timeseries.mat')
-   # print len(timeseries['TDs'][0][0][3])
+   # #print len(timeseries['TDs'][0])
+   # #print (timeseries['ADs'][0])
+   # #data = timeseries['TDs'][0]#, timeseries['ADs'][0]))
+   #
+   # indiv = np.zeros((4, len(timeseries['ADs'][0][0][0])))
+   # data = np.asarray([indiv] * len(labels))
+   # for d in range(len(labels)):
+   #     if d <= 39:
+   #         data[d] = timeseries['TDs'][0][d]
+   #     else:
+   #         data[d] = timeseries['ADs'][0][d-40]
+   #
+   # data_size = len(data)
+   # data = data.reshape(data_size,-1)
 
+   #labels = np.asarray([0] * nLabelOne)
+   ###### CLUSTERING #######
+
+   # print "Clustering..."
+   # kACC[i] = kCluster(data, labels)
+   # print "K_means ACC:", kACC[i]
+   # print " "
+#    ###### CLASSIFICATION #######
+#
    print "Running SVM..."
-   svmACC[i] = svmModel(data, labels)
+   svmACC[i] = svmModel(data, labels, nFolds)
    print "svm ACC:", svmACC[i]
    print " "
 
    print "Running RF..."
-   rfACC[i] = rfModel(data, labels)
+   rfACC[i] = rfModel(data, labels, nFolds)
    print "rf ACC:", rfACC[i]
    print " "
-
-print "=================================="
-print "Mean Values for %i Models"%(i+1)
-print "=================================="
-print "kmeans acc mean:", np.mean(kACC)
-print "svm acc mean:", np.mean(svmACC)
-print "rf acc mean:", np.mean(rfACC)
+#
+# print "=================================="
+# print "Mean Values for %i Models"%(i+1)
+# print "=================================="
+# print "kmeans acc mean:", np.mean(kACC)
+# print "svm acc mean:", np.mean(svmACC)
+# print "rf acc mean:", np.mean(rfACC)
 
 
 ###################################################################

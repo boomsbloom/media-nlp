@@ -120,6 +120,7 @@ def kCluster(vectorized, labels):
             js_dist[t][t2] = jsd(vectorized[t], vectorized[t2])
 
     k_means = cluster.KMeans(n_clusters=2)
+
     k_means.fit(js_dist)
 
     acc = 0
