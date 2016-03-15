@@ -169,6 +169,20 @@ def QbyDocument(texts, docs):
 
     return Q
 
+def getTopicProbs():
+    g = open('topicalPhrases/output/outputFiles/topics.txt','r')
+
+    probabilities = []
+    for topics in g:
+    	l = topics.split(',')
+    	length = Decimal(len(l) - 1) # -1 to account for linebreak index
+        length = float(length)
+    	topicProb = dict((i, l.count(i)/length) for i in l)
+    	topicProb = topicProb.values()[1:len(topicProb.values())]
+    	probabilities.append(topicProb)
+
+    return probabilities
+
 def getA(Qn, s, p):
     Tt = Qn[p,:]
 
@@ -187,7 +201,6 @@ def getAnchors(Qn, nTopics):
     return p, r
 
 
-
 def wordCount(texts):
     sorted_wordcount = {}
     for text in texts:
@@ -204,45 +217,8 @@ def wordCount(texts):
 
     return sorted_wordcount
 
-def bagOfWords(text):
-    script = open(text, 'r')
-    print "Preprocessing words...\n"
-    words = []
-    for word in script.read().split():
-        word = preProcess(word) #processing each word
-        if word:
-            words.append(word)
 
-    print "Creating bag of words model...\n"
-    vectorizer = CountVectorizer(analyzer = "word",
-                                 tokenizer = None,
-                                 preprocessor = None,
-                                 stop_words = None,
-                                 max_features = 5000)
 
-    #fit model and tranform to feature vectors
-    train_data_features = vectorizer.fit_transform(words)
-
-    train_data_features = train_data_features.toarray() #convert to numpy array
-
-    #shape of feature set
-    #print train_data_features.shape
-
-    #get our vocabulary
-    vocab = vectorizer.get_feature_names()
-    # print vocab
-
-    # Sum count of each word
-    sums = np.sum(train_data_features, axis=0)
-
-    # will need to sort of whatever for this to be useful
-    # sns.distplot(sums[range(100)])
-    # sns.axlabel(vocab[range(100)])
-    # plt.show()
-
-    # For each, print the vocabulary word and the number of times it appears
-    #for tag, count in zip(vocab, dist):
-    #    print count, tag
 
 
 

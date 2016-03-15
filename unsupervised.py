@@ -2,12 +2,86 @@
     Unsupervised learning functions
 '''
 
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from gensim import corpora, models, similarities
 from sklearn import cluster
 from decimal import *
 import numpy as np
 import lda
+import nltk
+
+
+# def word2vecModel(texts, documents):
+#     textList = []
+#     for text in texts:
+#         textList.append(documents[text])
+#     print textList
+
+
+def bagOfWords(texts, documents, nGram, toReduce):
+   textList = []
+   for text in texts:
+       if not nGram:
+           textList.append(" ".join(documents[text]))
+       else:
+           bigramList = []
+           for item in nltk.bigrams(" ".join(documents[text]).split()):
+               bigramList.append('_'.join(item))
+           tempList = bigramList + documents[text]
+           textList.append(' '.join(tempList))
+
+   print "Creating bag of words model...\n"
+
+   vectorizer = CountVectorizer(analyzer = "word", #Count or Tfidf Vectorizer
+                                tokenizer = None,
+                                preprocessor = None,
+                                stop_words = None,
+                                ngram_range= (1, 1),
+                                max_features = None)
+
+   #fit model and tranform to feature vectors
+   tdf = vectorizer.fit_transform(textList)
+
+   train_data_features = tdf.toarray() #convert to numpy array
+
+   if toReduce != 0:
+
+       vocab = vectorizer.get_feature_names()
+
+       dist = np.sum(train_data_features, axis=0)
+
+       # Removing words with a count less than 1
+       newVocab = []
+       for count in range(len(dist)):
+           if dist[count] > toReduce:
+               newVocab.append(vocab[count])
+
+       reducedTextList = []
+       for text in texts:
+           if not nGram:
+               reducedTextList.append(" ".join([i for i in documents[text] if i in set(newVocab)]))
+           else:
+               bigramList = []
+               for item in nltk.bigrams(" ".join(documents[text]).split()):
+                   bigramList.append('_'.join(item))
+               tempList = bigramList + documents[text]
+               reducedTextList.append(" ".join([i for i in tempList if i in set(newVocab)]))
+
+       vectorizer = CountVectorizer(analyzer = "word", #Count or Tfidf Vectorizer
+                                    tokenizer = None,
+                                    preprocessor = None,
+                                    stop_words = None,
+                                    ngram_range= (1, 1),
+                                    max_features = None)
+
+       #fit model and tranform to feature vectors
+       tdf = vectorizer.fit_transform(reducedTextList)
+
+       train_data_features = tdf.toarray() #convert to numpy array
+
+   print "number of features:", len(train_data_features[0])
+   return train_data_features
+
 
 def hdpModel(texts, documents, tLimit, forClass):
     def getKey(item):

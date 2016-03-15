@@ -17,8 +17,8 @@ textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
 # ..or whether input is multiple documents
-isCorpus = True
-#isCorpus = False
+#isCorpus = True
+isCorpus = False
 
 if isCorpus:
     scripts = 'texts/full_4letter_phrase_corpus.txt'
@@ -42,12 +42,24 @@ nWords = 3 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 500 # number of iterations for sampling
 
 # for HDP
-runHDP = True # whether to run HDP
+runHDP = False  # whether to run HDP
 tLimit = 150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
 # for raw timeseries classification
 runTimeseries = False #whether to run classification on just the timeseries (no topic modeling)
+
+# for phraseLDA
+# Already run using topicalPhrases/run.sh but this get topic probabilities from that for classification
+runPhraseLDA = False
+
+# for word2vec model //UNFINISHED
+runWord2Vec = False
+
+# for bag of words classification
+runBag = True
+nGramsinCorpus = True #False
+mincount = 3 #min word count ..make 0 for no reduction True/3 is best so far...
 
 # for classification
 nLabelOne = 40 #number of TDs
@@ -86,8 +98,8 @@ for i in range(nModels):
    print "=================================="
    print "Running Models for Iteration # %i" %(i+1)
    print "==================================\n"
-   print "Topic Modeling...\n"
    if runLDA:
+       print "Topic Modeling...\n"
 
        nWords = nWords + a
        topics[i], topicProbs[i], indivProbs[i]  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
@@ -95,6 +107,7 @@ for i in range(nModels):
        data = np.asarray(indivProbs[i])
 
    elif runHDP:
+       print "Topic Modeling...\n"
 
        indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
        data = np.asarray(indivProbs[i])
@@ -118,16 +131,25 @@ for i in range(nModels):
        data_size = len(data)
        data = data.reshape(data_size,-1)
 
+   elif runPhraseLDA:
+       indivProbs = f.getTopicProbs()
+       data = np.asarray(indivProbs)
+
+   elif runWord2Vec:
+       data = word2vecModel(scripts, documents)
+
+   elif runBag:
+       data = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+
    else:
        #sanity check data set (should be ACC: 1)
        data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo)
-
 
    print "Done.\n"
 
    ###### CLUSTERING #######
 
-   if not runTimeseries:
+   if not runTimeseries and not runBag:
        print "Clustering...\n"
        kACC[i] = kCluster(data, labels)
        print "K_means ACC:", kACC[i]
