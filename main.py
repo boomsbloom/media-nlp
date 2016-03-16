@@ -21,7 +21,8 @@ textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 isCorpus = False
 
 if isCorpus:
-    scripts = 'texts/full_4letter_phrase_corpus.txt'
+    #scripts = 'texts/full_4letter_phrase_corpus.txt'
+    scripts = 'topicalPhrases/rawFiles/4letters_full_corpus.txt'
 else:
     scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
     if len(scripts) > 80: #removing .DS_Store
@@ -38,7 +39,7 @@ nGrams = 10 # number of words in context ..only if running context calculation
 runLDA = False # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
-nWords = 3 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nWords = 4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 500 # number of iterations for sampling
 
 # for HDP
@@ -57,9 +58,12 @@ runPhraseLDA = False
 runWord2Vec = False
 
 # for bag of words classification
-runBag = True
-nGramsinCorpus = True #False
-mincount = 3 #min word count ..make 0 for no reduction True/3 is best so far...
+runBag = False
+nGramsinCorpus = False #True
+mincount = 1 #4 is best so far with mean: 0.7675, max: 0.8275 in BoW classification only
+
+# for doc2vec classification
+runDoc2Vec = False
 
 # for classification
 nLabelOne = 40 #number of TDs
@@ -77,7 +81,7 @@ runClassification = True # run classification on topic probabilities
 # Create dictionary with list of processed words for each document key
 documents = getDocuments(scripts, delimiter, isCorpus, textNames)
 
-if isCorpus:
+if isCorpus and not runDoc2Vec:
     scripts = textNames[1:len(textNames)]
 
 # Create dictionary with context lists for each word in each document
@@ -109,7 +113,12 @@ for i in range(nModels):
    elif runHDP:
        print "Topic Modeling...\n"
 
-       indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
+       if mincount != 0:
+           data, reducedDocuments = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+
+           indivProbs[i] = hdpModel(scripts, reducedDocuments, tLimit, runClassification)
+       else:
+           indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
        data = np.asarray(indivProbs[i])
 
    elif runTimeseries:
@@ -139,11 +148,14 @@ for i in range(nModels):
        data = word2vecModel(scripts, documents)
 
    elif runBag:
-       data = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+       data, newVocab = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+
+   elif runDoc2Vec:
+       data = doc2vecModel(scripts)
 
    else:
        #sanity check data set (should be ACC: 1)
-       data = np.asarray([[0, 0, 0]] * nLabelOne + [[1, 1, 1]] * nLabelTwo)
+       data = np.asarray([[0, 0, 0, 0, 0]] * nLabelOne + [[1, 1, 1, 1, 1]] * nLabelTwo)
 
    print "Done.\n"
 
@@ -168,9 +180,9 @@ for i in range(nModels):
 print "=================================="
 print "Mean Values for %i Models"%(i+1)
 print "==================================\n"
-if not runTimeseries:
-    print "kmeans acc mean:", np.mean(kACC)
-print "svm acc mean:", np.mean(svmACC)
+#if not runTimeseries:
+#    print "kmeans acc mean:", np.mean(kACC)
+#print "svm acc mean:", np.mean(svmACC)
 print "rf acc mean:", np.mean(rfACC)
 
 

@@ -3,7 +3,10 @@
 '''
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from gensim import corpora, models, similarities
+from gensim import corpora, models, similarities, utils
+from gensim.models.doc2vec import LabeledSentence
+from gensim.models import Doc2Vec
+from random import shuffle
 from sklearn import cluster
 from decimal import *
 import numpy as np
@@ -17,6 +20,54 @@ import nltk
 #         textList.append(documents[text])
 #     print textList
 
+def doc2vecModel(texts):
+
+    class LabeledLineSentence(object):
+        def __init__(self, sources):
+            self.sources = sources
+
+            flipped = {}
+
+            # make sure that keys are unique
+            for key, value in sources.items():
+                if value not in flipped:
+                    flipped[value] = [key]
+                else:
+                    raise Exception('Non-unique prefix encountered')
+
+        def __iter__(self):
+            for source, prefix in self.sources.items():
+                with utils.smart_open(source) as fin:
+                    for item_no, line in enumerate(fin):
+                        yield LabeledSentence(utils.to_unicode(line).split(), [prefix + '_%s' % item_no])
+
+        def to_array(self):
+            self.sentences = []
+            for source, prefix in self.sources.items():
+                with utils.smart_open(source) as fin:
+                    for item_no, line in enumerate(fin):
+                        self.sentences.append(LabeledSentence(utils.to_unicode(line).split(), [prefix + '_%s' % item_no]))
+            return self.sentences
+
+        def sentences_perm(self):
+            shuffle(self.sentences)
+            return self.sentences
+
+    sources = {texts:'Subject'}
+    sentences = LabeledLineSentence(sources)
+
+    nFeatures = 400
+    model = Doc2Vec(min_count=1, window=7, size=nFeatures, sample=1e-4, negative=5, workers=8)
+    model.build_vocab(sentences.to_array())
+    for epoch in range(10):
+        model.train(sentences.sentences_perm())
+
+    feature_arrays = np.zeros((len(sentences.to_array()), nFeatures))
+    for i in range(len(sentences.to_array())):
+        sentence_label = 'Subject_' + str(i)
+        feature_arrays[i] = model.docvecs[sentence_label]
+
+    return feature_arrays
 
 def bagOfWords(texts, documents, nGram, toReduce):
    textList = []
@@ -50,22 +101,25 @@ def bagOfWords(texts, documents, nGram, toReduce):
 
        dist = np.sum(train_data_features, axis=0)
 
-       # Removing words with a count less than 1
+       # Removing words with a count less than toReduce
        newVocab = []
        for count in range(len(dist)):
            if dist[count] > toReduce:
                newVocab.append(vocab[count])
 
        reducedTextList = []
+       reducedTextDic = {}
        for text in texts:
            if not nGram:
                reducedTextList.append(" ".join([i for i in documents[text] if i in set(newVocab)]))
+               reducedTextDic[text] = ([i for i in documents[text] if i in set(newVocab)])
            else:
                bigramList = []
                for item in nltk.bigrams(" ".join(documents[text]).split()):
                    bigramList.append('_'.join(item))
                tempList = bigramList + documents[text]
                reducedTextList.append(" ".join([i for i in tempList if i in set(newVocab)]))
+               reducedTextDic[text] = ([i for i in tempList if i in set(newVocab)])
 
        vectorizer = CountVectorizer(analyzer = "word", #Count or Tfidf Vectorizer
                                     tokenizer = None,
@@ -79,8 +133,14 @@ def bagOfWords(texts, documents, nGram, toReduce):
 
        train_data_features = tdf.toarray() #convert to numpy array
 
-   print "number of features:", len(train_data_features[0])
-   return train_data_features
+   print "number of words in vocabulary:", len(train_data_features[0])
+#   normed_data_features = []
+#   for feature_list in train_data_features:
+#       normed_feats = [float(Decimal(num)/Decimal(sum(feature_list))) for num in feature_list]
+#       normed_data_features.append(normed_feats)
+
+#   train_data_features = np.array(normed_data_features)
+   return train_data_features, reducedTextDic
 
 
 def hdpModel(texts, documents, tLimit, forClass):

@@ -17,6 +17,7 @@ def svmModel(data, labels, nFolds):
     kf = KFold(len(data), n_folds=nFolds)
     acc = 0
     for train, test in kf:
+
        data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
        svr = svm.SVC()
