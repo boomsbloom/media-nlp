@@ -12,7 +12,8 @@ from unsupervised import *
 ################ LOAD INPUT DATA ################
 #################################################
 
-path = 'texts/AD_TD_full_4letters/'
+#path = 'texts/AD_TD_half_4letters/'
+path = 'texts/AD_TD_4letter_4wordwindow'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -43,8 +44,8 @@ nWords = 4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 500 # number of iterations for sampling
 
 # for HDP
-runHDP = False  # whether to run HDP
-tLimit = 150 # limit on number of topics to look for (default is 150)
+runHDP = True  # whether to run HDP
+tLimit = 1000 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
 # for raw timeseries classification
@@ -59,8 +60,10 @@ runWord2Vec = False
 
 # for bag of words classification
 runBag = False
-nGramsinCorpus = False #True
-mincount = 1 #4 is best so far with mean: 0.7675, max: 0.8275 in BoW classification only
+nGramsinCorpus = True
+mincount = 0#150 #4
+# BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
+# NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
 
 # for doc2vec classification
 runDoc2Vec = False
@@ -70,6 +73,7 @@ nLabelOne = 40 #number of TDs
 nLabelTwo = 40 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 nFolds = len(labels) #leave-one-out
+nEstimators = 1000 #1000 #number of estimators for random forest classifier
 
 runClassification = True # run classification on topic probabilities
 #runClassification = False # OPTION ONLY FOR HDP ...run classification on document similarities
@@ -97,6 +101,9 @@ indivProbs = {}
 svmACC = [0] * nModels
 rfACC = [0] * nModels
 kACC = [0] * nModels
+enetACC = [0] * nModels
+importances = [[]] * nModels
+stds = [[]] * nModels
 a = 0
 for i in range(nModels):
    print "=================================="
@@ -114,7 +121,7 @@ for i in range(nModels):
        print "Topic Modeling...\n"
 
        if mincount != 0:
-           data, reducedDocuments = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+           data, reducedDocuments, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
 
            indivProbs[i] = hdpModel(scripts, reducedDocuments, tLimit, runClassification)
        else:
@@ -148,7 +155,9 @@ for i in range(nModels):
        data = word2vecModel(scripts, documents)
 
    elif runBag:
-       data, newVocab = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+       data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+       forBag = [scripts, documents, nGramsinCorpus, mincount]
+       # need to run this in my LOOCV because using test doc in feature selection corpus
 
    elif runDoc2Vec:
        data = doc2vecModel(scripts)
@@ -169,20 +178,34 @@ for i in range(nModels):
 
    ###### CLASSIFICATION #######
 
+   print "Running Elastic Net...\n"
+   enetACC[i] = eNetModel(data, labels, nFolds)
+   print "eNet ACC:", enetACC[i], "\n"
+
+
    print "Running SVM...\n"
    svmACC[i] = svmModel(data, labels, nFolds)
+   #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
    print "svm ACC:", svmACC[i], "\n"
 
-   print "Running RF...\n"
-   rfACC[i] = rfModel(data, labels, nFolds)
-   print "rf ACC:", rfACC[i], "\n"
+   #print "Running RF with %i estimators...\n" %(nEstimators)
+   #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
+   ##rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
+   #idx = (-importances[i]).argsort()[:5]
+
+   #print "Top 5 features:"
+   #for j in idx:
+    #     print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
+
+   #print "\nrf ACC:", rfACC[i], "\n"
 
 print "=================================="
 print "Mean Values for %i Models"%(i+1)
 print "==================================\n"
 #if not runTimeseries:
 #    print "kmeans acc mean:", np.mean(kACC)
-#print "svm acc mean:", np.mean(svmACC)
+print "enet acc mean:", np.mean(enetACC)
+print "svm acc mean:", np.mean(svmACC)
 print "rf acc mean:", np.mean(rfACC)
 
 

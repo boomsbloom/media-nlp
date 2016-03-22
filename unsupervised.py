@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from gensim import corpora, models, similarities, utils
 from gensim.models.doc2vec import LabeledSentence
 from gensim.models import Doc2Vec
+import gensim.models.wrappers as wrappers 
 from random import shuffle
 from sklearn import cluster
 from decimal import *
@@ -109,6 +110,9 @@ def bagOfWords(texts, documents, nGram, toReduce):
 
        reducedTextList = []
        reducedTextDic = {}
+       if nGram:
+           print "including bigrams in vocabulary\n"
+
        for text in texts:
            if not nGram:
                reducedTextList.append(" ".join([i for i in documents[text] if i in set(newVocab)]))
@@ -131,6 +135,8 @@ def bagOfWords(texts, documents, nGram, toReduce):
        #fit model and tranform to feature vectors
        tdf = vectorizer.fit_transform(reducedTextList)
 
+       featureNames = vectorizer.get_feature_names()
+
        train_data_features = tdf.toarray() #convert to numpy array
 
    print "number of words in vocabulary:", len(train_data_features[0])
@@ -140,7 +146,7 @@ def bagOfWords(texts, documents, nGram, toReduce):
 #       normed_data_features.append(normed_feats)
 
 #   train_data_features = np.array(normed_data_features)
-   return train_data_features, reducedTextDic
+   return train_data_features, reducedTextDic, featureNames
 
 
 def hdpModel(texts, documents, tLimit, forClass):
@@ -188,6 +194,8 @@ def hdpModel(texts, documents, tLimit, forClass):
         for text in range(len(testingList)):
             text_bow = dictionary.doc2bow(testingList[text])
             text_hdp = hdp[text_bow]
+            print text_hdp
+            print index
             sims = index[text_hdp]
             topicSims[text] = sims
 
