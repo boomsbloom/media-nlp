@@ -6,7 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from gensim import corpora, models, similarities, utils
 from gensim.models.doc2vec import LabeledSentence
 from gensim.models import Doc2Vec
-import gensim.models.wrappers as wrappers 
+import gensim.models.wrappers as wrappers
 from random import shuffle
 from sklearn import cluster
 from decimal import *
@@ -14,6 +14,48 @@ import numpy as np
 import lda
 import nltk
 
+def getKey(item):
+    return item[1]
+
+def DTModel(texts, documents, nTopics):
+    textList = []
+    #windowList = {}
+    windowList = []
+    for text in texts: #need to look at SAX code again to ensure these are correct
+        sentence = []
+        sent_end = 4
+        #windowList[text] = []
+        for w in range(len(documents[text])):
+            if w == sent_end:
+                sent_end+=5
+                #windowList[text].append(sentence)
+                windowList.append(sentence)
+                sentence = []
+            else:
+                sentence.append(documents[text][w])
+
+
+    dictionary = corpora.Dictionary(windowList)
+    corpus = [dictionary.doc2bow(sen) for sen in windowList
+    timeslices = [len(windowList)/131] *  131 # need to generalize
+
+    dtm = wrappers.DtmModel('dtm-master/bin/dtm-darwin64',corpus,timeslices,num_topics=nTopics,id2word=dictionary,initialize_lda=True)
+
+    topics = dtm.show_topics(topics=nTopics,times=2, topn=10)
+    print topics
+
+    # topicProbs = [[]] * len(texts)
+    # for text in range(len(texts)):
+    #     topicProb = [0] * tLimit
+    #     text_bow = dictionary.doc2bow(textList[text])
+    #     #print hdp[text_bow]
+    #     for prob in hdp[text_bow]:
+    #         topicProb[prob[0]] = prob[1]
+    #     topicProbs[text] = topicProb
+    # topics = hdp.print_topics(topics=151, topn=10)
+    # #print topics
+
+    return topicProbs
 
 # def word2vecModel(texts, documents):
 #     textList = []
@@ -150,8 +192,6 @@ def bagOfWords(texts, documents, nGram, toReduce):
 
 
 def hdpModel(texts, documents, tLimit, forClass):
-    def getKey(item):
-        return item[1]
 
     textList = []
     for text in texts:

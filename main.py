@@ -44,9 +44,13 @@ nWords = 4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 500 # number of iterations for sampling
 
 # for HDP
-runHDP = True  # whether to run HDP
-tLimit = 1000 # limit on number of topics to look for (default is 150)
+runHDP = False  # whether to run HDP
+tLimit = 150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
+
+# for DTM
+runDTM = False
+nTopics = 20
 
 # for raw timeseries classification
 runTimeseries = False #whether to run classification on just the timeseries (no topic modeling)
@@ -59,9 +63,9 @@ runPhraseLDA = False
 runWord2Vec = False
 
 # for bag of words classification
-runBag = False
+runBag = True
 nGramsinCorpus = True
-mincount = 0#150 #4
+mincount = 150 #4
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
 # NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
 
@@ -110,7 +114,7 @@ for i in range(nModels):
    print "Running Models for Iteration # %i" %(i+1)
    print "==================================\n"
    if runLDA:
-       print "Topic Modeling...\n"
+       print "Topic Modeling (LDA)..\n"
 
        nWords = nWords + a
        topics[i], topicProbs[i], indivProbs[i]  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
@@ -118,7 +122,7 @@ for i in range(nModels):
        data = np.asarray(indivProbs[i])
 
    elif runHDP:
-       print "Topic Modeling...\n"
+       print "Topic Modeling (HDP)...\n"
 
        if mincount != 0:
            data, reducedDocuments, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
@@ -126,6 +130,12 @@ for i in range(nModels):
            indivProbs[i] = hdpModel(scripts, reducedDocuments, tLimit, runClassification)
        else:
            indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
+       data = np.asarray(indivProbs[i])
+
+   elif runDTM:
+       print "Topic Modeling (DTM)...\n"
+
+       indivProbs[i] = DTModel(scripts, documents, nTopics)
        data = np.asarray(indivProbs[i])
 
    elif runTimeseries:
@@ -163,7 +173,8 @@ for i in range(nModels):
        data = doc2vecModel(scripts)
 
    else:
-       #sanity check data set (should be ACC: 1)
+       #should be ACC: 1 for all classifiers
+       print "Checking sanity...\n"
        data = np.asarray([[0, 0, 0, 0, 0]] * nLabelOne + [[1, 1, 1, 1, 1]] * nLabelTwo)
 
    print "Done.\n"
@@ -188,16 +199,16 @@ for i in range(nModels):
    #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
    print "svm ACC:", svmACC[i], "\n"
 
-   #print "Running RF with %i estimators...\n" %(nEstimators)
-   #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
-   ##rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
-   #idx = (-importances[i]).argsort()[:5]
+   print "Running RF with %i estimators...\n" %(nEstimators)
+   rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
+   #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
+   idx = (-importances[i]).argsort()[:5]
 
-   #print "Top 5 features:"
-   #for j in idx:
-    #     print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
+   print "Top 5 features:"
+   for j in idx:
+       print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
 
-   #print "\nrf ACC:", rfACC[i], "\n"
+   print "\nrf ACC:", rfACC[i], "\n"
 
 print "=================================="
 print "Mean Values for %i Models"%(i+1)
