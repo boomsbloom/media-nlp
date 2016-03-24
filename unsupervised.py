@@ -11,51 +11,80 @@ from random import shuffle
 from sklearn import cluster
 from decimal import *
 import numpy as np
-import lda
-import nltk
+import pandas as pd
+import lda, nltk, time
 
 def getKey(item):
     return item[1]
 
-def DTModel(texts, documents, nTopics):
-    textList = []
-    #windowList = {}
-    windowList = []
-    for text in texts: #need to look at SAX code again to ensure these are correct
-        sentence = []
-        sent_end = 4
-        #windowList[text] = []
-        for w in range(len(documents[text])):
-            if w == sent_end:
-                sent_end+=5
-                #windowList[text].append(sentence)
-                windowList.append(sentence)
-                sentence = []
-            else:
-                sentence.append(documents[text][w])
+def DTModel(texts, documents, nTopics, single_doc, preRun):
+    if not single_doc:
+        textList = []
+        #windowList = {}
+        windowList = []
+        #texts = texts[0:1]
+        for text in texts:
+            sentence = []
+            sent_end = 4
+            #windowList[text] = []
+            for w in range(len(documents[text])):
+                if w == sent_end:
+                    sent_end+=4
+                    #windowList[text].append(sentence)
+                    windowList.append(sentence)
+                    sentence = []
+                    sentence.append(documents[text][w])
+                else:
+                    sentence.append(documents[text][w])
+            windowList.append(sentence)
+
+        start_time = time.clock()
+        dictionary = corpora.Dictionary(windowList)
+        corpus = [dictionary.doc2bow(sen) for sen in windowList]
+        timeslices = [len(windowList)/164] *  164 # need to generalize
+        print "%s seconds elapsed for corpus generation\n" %(time.clock() - start_time)
 
 
-    dictionary = corpora.Dictionary(windowList)
-    corpus = [dictionary.doc2bow(sen) for sen in windowList
-    timeslices = [len(windowList)/131] *  131 # need to generalize
+        if preRun:
+            dtm = wrappers.DtmModel.load('fitted_dtm')
+        else:
+            start_time = time.clock()
+            dtm = wrappers.DtmModel('dtm-master/bin/dtm-darwin64',corpus,timeslices,num_topics=nTopics,id2word=dictionary,initialize_lda=True)
+            dtm.save('fitted_dtm_2topic')
+            print "%s seconds elapsed for model fitting\n" %(time.clock() - start_time)
 
-    dtm = wrappers.DtmModel('dtm-master/bin/dtm-darwin64',corpus,timeslices,num_topics=nTopics,id2word=dictionary,initialize_lda=True)
+        #print len(loaded.show_topics(topics=-1,times=1,topn=1))
+        #print np.fromfile(loaded.fout_prob(),dtype=float)
 
-    topics = dtm.show_topics(topics=nTopics,times=2, topn=10)
-    print topics
+        dynamic_topics = {}
+        for top in range(nTopics):
+            dynamic_topics[top] = {}
+            for ts in range(164):
+                dynamic_topics[top][ts] = {}
+                tProbs = dtm.show_topic(top, ts, topn=10)
+                for word in tProbs:
+                    dynamic_topics[top][ts][word[1]] = word[0]
+                #print "topic:", top, "slice:", ts
+                #dynamic_topics[top][ts] = pd.DataFrame.from_dict(dynamic_topics[top][ts],orient='index')
 
-    # topicProbs = [[]] * len(texts)
-    # for text in range(len(texts)):
-    #     topicProb = [0] * tLimit
-    #     text_bow = dictionary.doc2bow(textList[text])
-    #     #print hdp[text_bow]
-    #     for prob in hdp[text_bow]:
-    #         topicProb[prob[0]] = prob[1]
-    #     topicProbs[text] = topicProb
-    # topics = hdp.print_topics(topics=151, topn=10)
-    # #print topics
+            s = []
+            for ts in range(164): #get unique words in topic
+                dic = dynamic_topics[top][ts]
+                key_list = list(set(key for key in dic.keys()))
+                s = s + key_list
+                s = list(set(word for word in s))
 
-    return topicProbs
+            df = pd.DataFrame(index=s, columns=range(164))
+            df = df.fillna(0)
+
+            for ts in range(164):
+                dic = dynamic_topics[top][ts]
+                for key in dic.keys():
+                    df.loc[key,ts] = dic.get(key)
+
+            filename = 'dynamic_topics/2_topics/dynamic_data_topic_%i'%(top)
+            df.to_csv(filename)
+        print 'Dynamics saved for all topics.'
 
 # def word2vecModel(texts, documents):
 #     textList = []

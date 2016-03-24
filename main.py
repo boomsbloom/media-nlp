@@ -49,8 +49,10 @@ tLimit = 150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
 # for DTM
-runDTM = False
-nTopics = 20
+runDTM = True
+nTopics = 2
+single_doc = False
+preRun = False
 
 # for raw timeseries classification
 runTimeseries = False #whether to run classification on just the timeseries (no topic modeling)
@@ -63,9 +65,9 @@ runPhraseLDA = False
 runWord2Vec = False
 
 # for bag of words classification
-runBag = True
+runBag = False
 nGramsinCorpus = True
-mincount = 150 #4
+mincount = 150 #150s
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
 # NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
 
@@ -135,8 +137,7 @@ for i in range(nModels):
    elif runDTM:
        print "Topic Modeling (DTM)...\n"
 
-       indivProbs[i] = DTModel(scripts, documents, nTopics)
-       data = np.asarray(indivProbs[i])
+       DTModel(scripts, documents, nTopics, single_doc, preRun)
 
    elif runTimeseries:
 
@@ -181,43 +182,45 @@ for i in range(nModels):
 
    ###### CLUSTERING #######
 
-   if not runTimeseries and not runBag:
-       print "Clustering...\n"
-       kACC[i] = kCluster(data, labels)
-       print "K_means ACC:", kACC[i]
-       print " "
+   #if not runTimeseries and not runBag:
+    #   print "Clustering...\n"
+     #  kACC[i] = kCluster(data, labels)
+      # print "K_means ACC:", kACC[i]
+       #print " "
 
    ###### CLASSIFICATION #######
 
-   print "Running Elastic Net...\n"
-   enetACC[i] = eNetModel(data, labels, nFolds)
-   print "eNet ACC:", enetACC[i], "\n"
+   if not runDTM:
+       print "Running Elastic Net...\n"
+       enetACC[i] = eNetModel(data, labels, nFolds)
+       print "eNet ACC:", enetACC[i], "\n"
 
 
-   print "Running SVM...\n"
-   svmACC[i] = svmModel(data, labels, nFolds)
-   #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
-   print "svm ACC:", svmACC[i], "\n"
+       print "Running SVM...\n"
+       svmACC[i] = svmModel(data, labels, nFolds)
+       #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
+       print "svm ACC:", svmACC[i], "\n"
 
-   print "Running RF with %i estimators...\n" %(nEstimators)
-   rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
-   #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
-   idx = (-importances[i]).argsort()[:5]
+       print "Running RF with %i estimators...\n" %(nEstimators)
+       rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
+       #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
+       idx = (-importances[i]).argsort()[:5]
 
-   print "Top 5 features:"
-   for j in idx:
-       print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
+       print "Top 5 features:"
+       for j in idx:
+           print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
 
-   print "\nrf ACC:", rfACC[i], "\n"
+       print "\nrf ACC:", rfACC[i], "\n"
 
-print "=================================="
-print "Mean Values for %i Models"%(i+1)
-print "==================================\n"
-#if not runTimeseries:
-#    print "kmeans acc mean:", np.mean(kACC)
-print "enet acc mean:", np.mean(enetACC)
-print "svm acc mean:", np.mean(svmACC)
-print "rf acc mean:", np.mean(rfACC)
+if not runDTM:
+    print "=================================="
+    print "Mean Values for %i Models"%(i+1)
+    print "==================================\n"
+    #if not runTimeseries:
+    #    print "kmeans acc mean:", np.mean(kACC)
+    print "enet acc mean:", np.mean(enetACC)
+    print "svm acc mean:", np.mean(svmACC)
+    print "rf acc mean:", np.mean(rfACC)
 
 
 ###################################################################
