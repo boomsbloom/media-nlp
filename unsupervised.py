@@ -17,7 +17,7 @@ import lda, nltk, time
 def getKey(item):
     return item[1]
 
-def DTModel(texts, documents, nTopics, single_doc, preRun):
+def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preRun):
     if not single_doc:
         textList = []
         #windowList = {}
@@ -41,17 +41,28 @@ def DTModel(texts, documents, nTopics, single_doc, preRun):
         start_time = time.clock()
         dictionary = corpora.Dictionary(windowList)
         corpus = [dictionary.doc2bow(sen) for sen in windowList]
-        timeslices = [len(windowList)/164] *  164 # need to generalize
+        timeslices = [len(windowList)/nTimepoints] *  nTimepoints
         print "%s seconds elapsed for corpus generation\n" %(time.clock() - start_time)
 
 
         if preRun:
-            dtm = wrappers.DtmModel.load('fitted_dtm')
+            modelFile = 'fitted_dtm_%itopic_AD' %(nTopics)
+            dtm = wrappers.DtmModel.load(modelFile)
         else:
             start_time = time.clock()
             dtm = wrappers.DtmModel('dtm-master/bin/dtm-darwin64',corpus,timeslices,num_topics=nTopics,id2word=dictionary,initialize_lda=True)
-            dtm.save('fitted_dtm_2topic')
+            modelfile = 'fitted_dtm_%itopic_AD' %(nTopics)
+            dtm.save(modelfile)
             print "%s seconds elapsed for model fitting\n" %(time.clock() - start_time)
+
+        gammas = dtm.gamma_ #topic proportion for each document at each t
+
+        gammas3d = np.reshape(gammas,(nTimepoints,nDocuments,nTopics))
+
+        gamma_mu = np.zeros((nDocuments, nTopics))
+        for s in range(nDocuments):
+            for j in range(nTopics):
+                gamma_mu[s,j] = np.mean([gammas3d[t,s,j] for t in range(nTimepoints)], axis = 0)
 
         #print len(loaded.show_topics(topics=-1,times=1,topn=1))
         #print np.fromfile(loaded.fout_prob(),dtype=float)
@@ -59,32 +70,36 @@ def DTModel(texts, documents, nTopics, single_doc, preRun):
         dynamic_topics = {}
         for top in range(nTopics):
             dynamic_topics[top] = {}
-            for ts in range(164):
+            for ts in range(nTimepoints):
                 dynamic_topics[top][ts] = {}
-                tProbs = dtm.show_topic(top, ts, topn=10)
+                tProbs = dtm.show_topic(top, ts, topn=1) #10
                 for word in tProbs:
                     dynamic_topics[top][ts][word[1]] = word[0]
                 #print "topic:", top, "slice:", ts
                 #dynamic_topics[top][ts] = pd.DataFrame.from_dict(dynamic_topics[top][ts],orient='index')
 
             s = []
-            for ts in range(164): #get unique words in topic
+            for ts in range(nTimepoints): #get unique words in topic
                 dic = dynamic_topics[top][ts]
                 key_list = list(set(key for key in dic.keys()))
                 s = s + key_list
                 s = list(set(word for word in s))
 
-            df = pd.DataFrame(index=s, columns=range(164))
+            df = pd.DataFrame(index=s, columns=range(nTimepoints))
             df = df.fillna(0)
 
-            for ts in range(164):
+            for ts in range(nTimepoints):
                 dic = dynamic_topics[top][ts]
                 for key in dic.keys():
                     df.loc[key,ts] = dic.get(key)
 
-            filename = 'dynamic_topics/2_topics/dynamic_data_topic_%i'%(top)
+            filename = 'dynamic_topics/%i_topics_AD/dynamic_data_topic_%i_1word'%(nTopics,top)
             df.to_csv(filename)
-        print 'Dynamics saved for all topics.'
+            filename2 = 'dynamic_topics/%i_topics_AD/gammas.csv'%(nTopics)
+            np.savetxt(filename2,gammas,delimiter=',')
+        print 'Dynamics saved for all topics.\n'
+
+    return gamma_mu
 
 # def word2vecModel(texts, documents):
 #     textList = []

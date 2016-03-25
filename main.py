@@ -13,7 +13,9 @@ from unsupervised import *
 #################################################
 
 #path = 'texts/AD_TD_half_4letters/'
-path = 'texts/AD_TD_4letter_4wordwindow'
+#path = 'texts/AD_TD_4letter_4wordwindow'
+path = 'texts/AD_4_window'
+#path = 'texts/TD_4_window'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -50,9 +52,11 @@ tLimit = 150 # limit on number of topics to look for (default is 150)
 
 # for DTM
 runDTM = True
-nTopics = 2
+nTopics = 1 #20
+nDocuments = 40
+nTimepoints = 164
 single_doc = False
-preRun = False
+preRun = True
 
 # for raw timeseries classification
 runTimeseries = False #whether to run classification on just the timeseries (no topic modeling)
@@ -136,8 +140,8 @@ for i in range(nModels):
 
    elif runDTM:
        print "Topic Modeling (DTM)...\n"
-
-       DTModel(scripts, documents, nTopics, single_doc, preRun)
+       #this currently returns mean topic prob over time..probably useless
+       data = DTModel(scripts, documents, nTopics, nDocuments, nTimepoints, single_doc, preRun)
 
    elif runTimeseries:
 
