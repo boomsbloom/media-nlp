@@ -1,12 +1,13 @@
 import os, operator, scipy
 import functions as f
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from processing import getDocuments
 from contexts import getnGrams
 from occurrences import *
 from supervised import *
-from unsupervised import *
+#from unsupervised import *
+from unsupervised import ldaModel
 
 #################################################
 ################ LOAD INPUT DATA ################
@@ -14,8 +15,8 @@ from unsupervised import *
 
 #path = 'texts/AD_TD_half_4letters/'
 #path = 'texts/AD_TD_4letter_4wordwindow'
-path = 'texts/AD_4_window'
-#path = 'texts/TD_4_window'
+#path = 'texts/AD_4_window'
+path = 'texts/TD_4_window'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -35,28 +36,30 @@ else:
 ############### CHOOSE PARAMETERS ###############
 #################################################
 
+network_wise = False
+
 nModels = 10 # number of times you want modeling to run
 nGrams = 10 # number of words in context ..only if running context calculation
 
 # for LDA
-runLDA = False # whether to run LDA
+runLDA = True # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
-nWords = 4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
-nIters = 500 # number of iterations for sampling
+nWords = 3 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nIters = 1000 # number of iterations for sampling
 
 # for HDP
 runHDP = False  # whether to run HDP
-tLimit = 150 # limit on number of topics to look for (default is 150)
+tLimit = 150#150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
 # for DTM
-runDTM = True
-nTopics = 1 #20
-nDocuments = 40
+runDTM = False
+nTopics = 10 #20
+nDocuments = 80
 nTimepoints = 164
 single_doc = False
-preRun = True
+preRun = False
 
 # for raw timeseries classification
 runTimeseries = False #whether to run classification on just the timeseries (no topic modeling)
@@ -71,7 +74,7 @@ runWord2Vec = False
 # for bag of words classification
 runBag = False
 nGramsinCorpus = True
-mincount = 150 #150s
+mincount = 2700 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
 # NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
 
@@ -94,6 +97,20 @@ runClassification = True # run classification on topic probabilities
 
 # Create dictionary with list of processed words for each document key
 documents = getDocuments(scripts, delimiter, isCorpus, textNames)
+
+if network_wise:
+
+    new_docs = {}
+    for doc in documents:
+        new_docs[doc] = []
+        for word in documents[doc]:
+            #documents[doc][documents[doc].index(word)] = 'DMN_' + word[0] + ' SN_' + word[1] + ' LECN_' + word[2] + ' RECN_' + word[3]
+            new_docs[doc].append(' dmn_' + word[0])
+            new_docs[doc].append(' sn_' + word[1])
+            new_docs[doc].append(' lecn_' + word[2])
+            new_docs[doc].append(' recn_' + word[3])
+
+    documents = new_docs
 
 if isCorpus and not runDoc2Vec:
     scripts = textNames[1:len(textNames)]
@@ -127,6 +144,17 @@ for i in range(nModels):
        a += 1
        data = np.asarray(indivProbs[i])
 
+       ###############################
+       # plotting mean probabilities #
+       ###############################
+
+       fig, ax = plt.subplots()
+       index = np.arange(len(topicProbs[i]))
+       ax.bar(index,topicProbs[i]) #s=20 should be abstracted to number of words in topics
+       bar_width = 0.35
+       plt.xticks(index + bar_width, (map(str,range(nTopics))))
+       plt.show()
+
    elif runHDP:
        print "Topic Modeling (HDP)...\n"
 
@@ -141,7 +169,7 @@ for i in range(nModels):
    elif runDTM:
        print "Topic Modeling (DTM)...\n"
        #this currently returns mean topic prob over time..probably useless
-       data = DTModel(scripts, documents, nTopics, nDocuments, nTimepoints, single_doc, preRun)
+       data = DTModel(scripts, documents, nTopics, nDocuments, nTimepoints, single_doc, preRun, network_wise)
 
    elif runTimeseries:
 
@@ -262,16 +290,7 @@ if not runDTM:
 # plt.xticks(index + bar_width, words)
 # plt.show()
 
-###############################
-# plotting mean probabilities #
-###############################
 
-# fig, ax = plt.subplots()
-# index = np.arange(len(topicProbs))
-# ax.bar(index,topicProbs) #s=20 should be abstracted to number of words in topics
-# bar_width = 0.35
-# plt.xticks(index + bar_width, (map(str,range(nTopics))))
-# plt.show()
 
 
 

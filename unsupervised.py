@@ -3,10 +3,10 @@
 '''
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from gensim import corpora, models, similarities, utils
-from gensim.models.doc2vec import LabeledSentence
-from gensim.models import Doc2Vec
-import gensim.models.wrappers as wrappers
+#from gensim import corpora, models, similarities, utils
+#from gensim.models.doc2vec import LabeledSentence
+#from gensim.models import Doc2Vec
+#import gensim.models.wrappers as wrappers
 from random import shuffle
 from sklearn import cluster
 from decimal import *
@@ -17,7 +17,11 @@ import lda, nltk, time
 def getKey(item):
     return item[1]
 
-def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preRun):
+def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preRun, network_wise):
+    if network_wise:
+        sent_length = 16
+    else:
+        sent_length = 4
     if not single_doc:
         textList = []
         #windowList = {}
@@ -25,11 +29,11 @@ def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preR
         #texts = texts[0:1]
         for text in texts:
             sentence = []
-            sent_end = 4
+            sent_end = sent_length
             #windowList[text] = []
             for w in range(len(documents[text])):
                 if w == sent_end:
-                    sent_end+=4
+                    sent_end+=sent_length
                     #windowList[text].append(sentence)
                     windowList.append(sentence)
                     sentence = []
@@ -46,12 +50,14 @@ def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preR
 
 
         if preRun:
-            modelFile = 'fitted_dtm_%itopic_AD' %(nTopics)
+            #modelFile = 'fitted_dtm_%itopic_AD' %(nTopics)
+            modelFile = 'fitted_dtm_%itopic_network-wise' %(nTopics)
             dtm = wrappers.DtmModel.load(modelFile)
         else:
             start_time = time.clock()
             dtm = wrappers.DtmModel('dtm-master/bin/dtm-darwin64',corpus,timeslices,num_topics=nTopics,id2word=dictionary,initialize_lda=True)
-            modelfile = 'fitted_dtm_%itopic_AD' %(nTopics)
+            #modelfile = 'fitted_dtm_%itopic_AD' %(nTopics)
+            modelfile = 'fitted_dtm_%itopic_TD_network-wise' %(nTopics)
             dtm.save(modelfile)
             print "%s seconds elapsed for model fitting\n" %(time.clock() - start_time)
 
@@ -72,7 +78,7 @@ def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preR
             dynamic_topics[top] = {}
             for ts in range(nTimepoints):
                 dynamic_topics[top][ts] = {}
-                tProbs = dtm.show_topic(top, ts, topn=1) #10
+                tProbs = dtm.show_topic(top, ts, topn=10) #10
                 for word in tProbs:
                     dynamic_topics[top][ts][word[1]] = word[0]
                 #print "topic:", top, "slice:", ts
@@ -93,9 +99,11 @@ def DTModel(texts, documents, nTopics, nDocuments, nTimepoints, single_doc, preR
                 for key in dic.keys():
                     df.loc[key,ts] = dic.get(key)
 
-            filename = 'dynamic_topics/%i_topics_AD/dynamic_data_topic_%i_1word'%(nTopics,top)
+            #filename = 'dynamic_topics/%i_topics_AD/dynamic_data_topic_%i_1word'%(nTopics,top)
+            filename = 'dynamic_topics/%i_topics_TD_network-wise/dynamic_data_topic_%i'%(nTopics,top)
             df.to_csv(filename)
-            filename2 = 'dynamic_topics/%i_topics_AD/gammas.csv'%(nTopics)
+            #filename2 = 'dynamic_topics/%i_topics_AD/gammas.csv'%(nTopics)
+            filename2 = 'dynamic_topics/%i_topics_TD_network-wise/gammas.csv'%(nTopics)
             np.savetxt(filename2,gammas,delimiter=',')
         print 'Dynamics saved for all topics.\n'
 
@@ -217,7 +225,6 @@ def bagOfWords(texts, documents, nGram, toReduce):
                                     stop_words = None,
                                     ngram_range= (1, 1),
                                     max_features = None)
-
        #fit model and tranform to feature vectors
        tdf = vectorizer.fit_transform(reducedTextList)
 

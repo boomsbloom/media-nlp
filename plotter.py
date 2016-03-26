@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 #from unsupervised import jsd
 
-nTopics = 1 #20 #5 #1
+nTopics = 1 #20 #5 #10
 nDocuments = 40
 nTimepoints = 164
-group = ['_TD','_AD'] #'' #'_AD'
+#group = ['_TD','_AD'] #'' #'_AD'
 #group = ['']
+group = ['_network-wise']
 #def plot_divergence():
 
 
@@ -19,7 +20,7 @@ def plot_relevance():
     '''
     Relevance is the sum of topc proportions for each doc at t / num documents
     '''
-    filename = "dynamic_topics/%i_topics/gammas.csv"%(nTopics)
+    filename = "dynamic_topics/%i_topics_network-wise/gammas.csv"%(nTopics)
     gammas = np.loadtxt(open(filename,"rb"),delimiter=",")
     gammas = np.reshape(gammas,(nTimepoints,nDocuments,nTopics))
 
@@ -46,8 +47,8 @@ def plot_relevance():
 def plot_dynamics():
     dynamic_topic_data = {}
     for t in range(nTopics):
-        #filename = ('dynamic_topics/%i_topics%s/dynamic_data_topic_%i')%(nTopics,group[0],t)
-        filename = ('dynamic_topics/%i_topics%s/dynamic_data_topic_%i_1word')%(nTopics,group[0],t)
+        filename = ('dynamic_topics/%i_topics_TD%s/dynamic_data_topic_%i')%(nTopics,group[0],t)
+        #filename = ('dynamic_topics/%i_topics%s/dynamic_data_topic_%i_1word')%(nTopics,group[0],t)
         dynamic_topic_data[t] = pd.DataFrame.from_csv(filename)
 
         p = sns.heatmap(dynamic_topic_data[t])
@@ -68,11 +69,11 @@ def plot_dynamics_diff(): #currently only have data for 1 topic for TD - ADHD
     AD_dynamic_topic_data = {}
     diff_dynamic_topic_data = {}
     for t in range(nTopics):
-        TD_filename = ('dynamic_topics/%i_topics_TD/dynamic_data_topic_%i_1word')%(nTopics,t)
+        TD_filename = ('dynamic_topics/%i_topics_TD_network-wise/dynamic_data_topic_%i')%(nTopics,t)
         #TD_filename = ('dynamic_topics/%i_topics%s/dynamic_data_topic_%i')%(nTopics,group[0],t)
         TD_dynamic_topic_data[t] = pd.DataFrame.from_csv(TD_filename)
 
-        AD_filename = ('dynamic_topics/%i_topics_AD/dynamic_data_topic_%i_1word')%(nTopics,t)
+        AD_filename = ('dynamic_topics/%i_topics_AD_network-wise/dynamic_data_topic_%i')%(nTopics,t)
         #AD_filename = ('dynamic_topics/%i_topics%s/dynamic_data_topic_%i')%(nTopics,group[1],t)
         AD_dynamic_topic_data[t] = pd.DataFrame.from_csv(AD_filename)
 
