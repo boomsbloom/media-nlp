@@ -190,6 +190,10 @@ def bagOfWords(texts, documents, nGram, toReduce):
 
    train_data_features = tdf.toarray() #convert to numpy array
 
+   featureNames = vectorizer.get_feature_names()
+
+   reducedTextDic = []
+
    if toReduce != 0:
 
        vocab = vectorizer.get_feature_names()

@@ -15,8 +15,8 @@ from unsupervised import ldaModel
 
 #path = 'texts/AD_TD_half_4letters/'
 #path = 'texts/AD_TD_4letter_4wordwindow'
-#path = 'texts/AD_4_window'
-path = 'texts/TD_4_window'
+path = 'texts/AD_4_window'
+#path = 'texts/TD_4_window'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -42,7 +42,7 @@ nModels = 10 # number of times you want modeling to run
 nGrams = 10 # number of words in context ..only if running context calculation
 
 # for LDA
-runLDA = True # whether to run LDA
+runLDA = False # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
 nWords = 3 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
@@ -72,9 +72,9 @@ runPhraseLDA = False
 runWord2Vec = False
 
 # for bag of words classification
-runBag = False
-nGramsinCorpus = True
-mincount = 2700 #150 #need massive number (like 3000) for network_wise words
+runBag = True
+nGramsinCorpus = False
+mincount = 0 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
 # NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
 
@@ -199,8 +199,25 @@ for i in range(nModels):
 
    elif runBag:
        data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+       meanFreq = np.mean(data,axis=0)
+       topFreq = []
+       topNames = []
+       for c in range(len(meanFreq)):
+           if meanFreq[c] > 5:
+               topFreq.append(meanFreq[c])
+               topNames.append(featureNames[c])
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
+
+       fig, ax = plt.subplots()
+       index = np.arange(len(topFreq))
+       ax.bar(index,topFreq) #s=20 should be abstracted to number of words in topics
+       bar_width = 0.35
+       plt.xticks(index + bar_width, (map(str,range(len(topFreq)))))
+       ax.set_xticklabels(topNames)
+       for label in ax.get_xticklabels():
+           label.set_rotation(90)
+       plt.show()
 
    elif runDoc2Vec:
        data = doc2vecModel(scripts)
