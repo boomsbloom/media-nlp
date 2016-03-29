@@ -1,22 +1,26 @@
-import os, operator, scipy
+import os, operator, scipy, csv
 import functions as f
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+#import seaborn as sns
 import numpy as np
 from processing import getDocuments
 from contexts import getnGrams
 from occurrences import *
 from supervised import *
-#from unsupervised import *
-from unsupervised import ldaModel
+from unsupervised import *
+#from unsupervised import ldaModel
 
 #################################################
 ################ LOAD INPUT DATA ################
 #################################################
 
-#path = 'texts/AD_TD_half_4letters/'
+path = 'texts/AD_TD_half_4letters/'
 #path = 'texts/AD_TD_4letter_4wordwindow'
-path = 'texts/AD_4_window'
+#path = 'texts/AD_4_window'
 #path = 'texts/TD_4_window'
+#path = 'texts/AD_TD_window_normed'
+#path = 'texts/AD_4_half'
+#path = 'texts/TD_4_half'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -73,8 +77,9 @@ runWord2Vec = False
 
 # for bag of words classification
 runBag = True
-nGramsinCorpus = False
-mincount = 0 #150 #need massive number (like 3000) for network_wise words
+nGramsinCorpus = True
+windowGrams = False
+mincount = 4#80 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
 # NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
 
@@ -198,26 +203,17 @@ for i in range(nModels):
        data = word2vecModel(scripts, documents)
 
    elif runBag:
-       data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
-       meanFreq = np.mean(data,axis=0)
-       topFreq = []
-       topNames = []
-       for c in range(len(meanFreq)):
-           if meanFreq[c] > 5:
-               topFreq.append(meanFreq[c])
-               topNames.append(featureNames[c])
+       data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams)
+       countFreq = np.sum(data, axis=0)
+
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-       fig, ax = plt.subplots()
-       index = np.arange(len(topFreq))
-       ax.bar(index,topFreq) #s=20 should be abstracted to number of words in topics
-       bar_width = 0.35
-       plt.xticks(index + bar_width, (map(str,range(len(topFreq)))))
-       ax.set_xticklabels(topNames)
-       for label in ax.get_xticklabels():
-           label.set_rotation(90)
-       plt.show()
+       myfile = open('TD_meanBoW_bigram', 'wb')
+       wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+       wr.writerow(countFreq)
+       wr.writerow(featureNames)
+
 
    elif runDoc2Vec:
        data = doc2vecModel(scripts)

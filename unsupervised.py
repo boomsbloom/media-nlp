@@ -164,10 +164,22 @@ def doc2vecModel(texts):
 
     return feature_arrays
 
-def bagOfWords(texts, documents, nGram, toReduce):
+
+def bagOfWords(texts, documents, nGram, toReduce, windowGrams):
    textList = []
    for text in texts:
-       if not nGram:
+       if windowGrams:
+           begin = 0
+           end = 4
+           bigramList = []
+           for s in range(len(documents[text])/4):
+               sentence = documents[text][begin:end]
+               for item in nltk.bigrams(sentence):
+                   bigramList.append('_'.join(item))
+               begin += 4
+               end += 4
+           textList.append(' '.join(bigramList))
+       elif not nGram:
            textList.append(" ".join(documents[text]))
        else:
            bigramList = []
@@ -184,6 +196,7 @@ def bagOfWords(texts, documents, nGram, toReduce):
                                 stop_words = None,
                                 ngram_range= (1, 1),
                                 max_features = None)
+
 
    #fit model and tranform to feature vectors
    tdf = vectorizer.fit_transform(textList)
