@@ -1,7 +1,7 @@
 import os, operator, scipy, csv
 import functions as f
-#import matplotlib.pyplot as plt
-#import seaborn as sns
+import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 from processing import getDocuments
 from contexts import getnGrams
@@ -14,13 +14,16 @@ from unsupervised import *
 ################ LOAD INPUT DATA ################
 #################################################
 
-path = 'texts/AD_TD_half_4letters/'
+#path = 'texts/AD_TD_half_4letters/'
+#path = 'texts/AD_TD_full_4letters/'
+#path = 'texts/AD_4_full/'
+#path = 'texts/TD_4_full/'
 #path = 'texts/AD_TD_4letter_4wordwindow'
 #path = 'texts/AD_4_window'
 #path = 'texts/TD_4_window'
 #path = 'texts/AD_TD_window_normed'
 #path = 'texts/AD_4_half'
-#path = 'texts/TD_4_half'
+path = 'texts/TD_4_half'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -46,7 +49,7 @@ nModels = 10 # number of times you want modeling to run
 nGrams = 10 # number of words in context ..only if running context calculation
 
 # for LDA
-runLDA = False # whether to run LDA
+runLDA = True  # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
 nWords = 3 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
@@ -76,12 +79,16 @@ runPhraseLDA = False
 runWord2Vec = False
 
 # for bag of words classification
-runBag = True
+runBag = False
 nGramsinCorpus = True
 windowGrams = False
-mincount = 4#80 #150 #need massive number (like 3000) for network_wise words
-# BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825
+gramsOnly = True
+mincount = 4 #80 #150 #need massive number (like 3000) for network_wise words
+# BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825 (vocab of 248 words)
+###### without biGrams: (vocab of 236 words) gives around 0.8
+
 # NEW BEST: 4wordwindow + biGrams + 150 mincount + SVM gives mean: 0.8625
+    # this is with non-normalized windows so it probably not valid
 
 # for doc2vec classification
 runDoc2Vec = False
@@ -203,16 +210,16 @@ for i in range(nModels):
        data = word2vecModel(scripts, documents)
 
    elif runBag:
-       data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams)
+       data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams, gramsOnly)
        countFreq = np.sum(data, axis=0)
 
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-       myfile = open('TD_meanBoW_bigram', 'wb')
-       wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-       wr.writerow(countFreq)
-       wr.writerow(featureNames)
+       #myfile = open('TD_BoW_FULL_only_bigrams', 'wb')
+       #wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+       #wr.writerow(countFreq)
+       #wr.writerow(featureNames)
 
 
    elif runDoc2Vec:
@@ -249,9 +256,9 @@ for i in range(nModels):
        print "Running RF with %i estimators...\n" %(nEstimators)
        rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
        #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
-       idx = (-importances[i]).argsort()[:5]
+       idx = (-importances[i]).argsort()[:10]
 
-       print "Top 5 features:"
+       print "Top 10 features:"
        for j in idx:
            print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
 

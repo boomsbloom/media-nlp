@@ -165,7 +165,7 @@ def doc2vecModel(texts):
     return feature_arrays
 
 
-def bagOfWords(texts, documents, nGram, toReduce, windowGrams):
+def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
    textList = []
    for text in texts:
        if windowGrams:
@@ -179,6 +179,11 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams):
                begin += 4
                end += 4
            textList.append(' '.join(bigramList))
+       elif gramsOnly:
+          bigramList = []
+          for item in nltk.bigrams(" ".join(documents[text]).split()):
+              bigramList.append('_'.join(item))
+          textList.append(' '.join(bigramList))
        elif not nGram:
            textList.append(" ".join(documents[text]))
        else:
