@@ -15,7 +15,7 @@ from unsupervised import *
 ################ LOAD INPUT DATA ################
 #################################################
 
-#path = 'texts/AD_TD_half_4letters/'
+path = 'texts/AD_TD_half_4letters/'
 #path = 'texts/AD_TD_full_4letters/'
 #path = 'texts/AD_4_full/'
 #path = 'texts/TD_4_full/'
@@ -23,7 +23,7 @@ from unsupervised import *
 #path = 'texts/AD_4_window'
 #path = 'texts/TD_4_window'
 #path = 'texts/AD_TD_window_normed'
-path = 'texts/AD_4_half'
+#path = 'texts/AD_4_half'
 #path = 'texts/TD_4_half'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
@@ -80,11 +80,11 @@ runPhraseLDA = False
 runWord2Vec = False
 
 # for bag of words classification
-runBag = False
-nGramsinCorpus = True
+runBag = True
+nGramsinCorpus = False
 windowGrams = False
-gramsOnly = True
-mincount = 4 #80 #150 #need massive number (like 3000) for network_wise words
+gramsOnly = False
+mincount = 0 #4 #80 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825 (vocab of 248 words)
 ###### without biGrams: (vocab of 236 words) gives around 0.8
 
