@@ -216,6 +216,46 @@ def plot_BoW():
 
     #plt.show()
 
+def plot_Networkletters():
+    DMN = []
+    SN = []
+    LECN = []
+    RECN = []
+    letters = ['a','b','c','d']
+    for doc in documents:
+        for word in documents[doc]:
+            DMN.append(word[0])
+            SN.append(word[1])
+            LECN.append(word[2])
+            RECN.append(word[3])
+
+    letter_counts = {}
+    c1 = []
+    c2 = []
+    c3 = []
+    c4 = []
+    for let in letters:
+        c1.append(DMN.count(let))
+        c2.append(SN.count(let))
+        c3.append(LECN.count(let))
+        c4.append(RECN.count(let))
+
+    letter_counts['DMN'] = c1
+    letter_counts['SN'] = c2
+    letter_counts['LECN'] = c3
+    letter_counts['RECN'] = c4
+
+    a = pd.DataFrame.from_dict(letter_counts)
+    a.index = letters
+
+    fig = a.plot(x=a.index, y=a.columns, kind='bar')
+    fig.set_ylim([400,1200])
+    for label in fig.get_xticklabels():
+      label.set_rotation(360)
+
+
+    sns.plt.title("AD (half) letter counts")
+    plt.show()
 
 
 def plot_relevance():

@@ -3,6 +3,7 @@ import functions as f
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
 from processing import getDocuments
 from contexts import getnGrams
 from occurrences import *
@@ -22,8 +23,8 @@ from unsupervised import *
 #path = 'texts/AD_4_window'
 #path = 'texts/TD_4_window'
 #path = 'texts/AD_TD_window_normed'
-#path = 'texts/AD_4_half'
-path = 'texts/TD_4_half'
+path = 'texts/AD_4_half'
+#path = 'texts/TD_4_half'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
 # choose whether input is one document with your whole corpus in it (to be split up)
@@ -49,7 +50,7 @@ nModels = 10 # number of times you want modeling to run
 nGrams = 10 # number of words in context ..only if running context calculation
 
 # for LDA
-runLDA = True  # whether to run LDA
+runLDA = False  # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
 nWords = 3 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
