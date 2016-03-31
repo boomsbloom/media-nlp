@@ -17,7 +17,7 @@ delimiter = 'none'
 nGramsinCorpus = False
 windowGrams = False
 gramsOnly = False
-mincount = 4
+mincount = 0
 
 nModels = 5
 
@@ -28,15 +28,17 @@ nFolds = len(labels) #leave-one-out
 nEstimators = 1000 #1000 #number of estimators for random forest classifier
 
 rf_accs = {}
+featureSelection = {}
 for length in range(2):
     if length == 0:
         pre_path = 'texts/ADHD_various_letters_half/'
     else:
         pre_path = 'texts/ADHD_various_letters_full/'
 
-    let_acc = [0] * 14
+    let_acc = [0] * 3 #14
+    feat_info = {}#[[]] * 3
 
-    for let in range(2,16):
+    for let in range(2,5): #5 #16
         path = pre_path + '%s_word'%(let)
 
         textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
@@ -53,6 +55,9 @@ for length in range(2):
 
         rfACC = [0] * nModels
         importances = [[]] * nModels
+        top_importances = [[]] * nModels
+        top_stds = [[]] * nModels
+        top_featNames = [[]] * nModels
         stds = [[]] * nModels
 
         for i in range(nModels):
@@ -60,18 +65,35 @@ for length in range(2):
            rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
            idx = (-importances[i]).argsort()[:10]
 
+           topfeats = []
+           topstds = []
+           topfeatNames = []
            print "Top 10 features:"
            for j in idx:
                print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
+               topfeats.append(importances[i][j])
+               topstds.append(stds[i][j])
+               topfeatNames.append(str(featureNames[j]))
+
+           top_importances[i] = topfeats
+           top_stds[i] = topstds
+           top_featNames[i] = topfeatNames
+           topfeats = []
+           topstds = []
+           topfeatNames = []
 
            print "\nrf ACC:", rfACC[i], "\n"
 
            rfACC[i] = float(rfACC[i])
 
         let_acc[let-2] = np.mean(rfACC)
+        feat_info[let-2] = {'features':top_featNames,'importance':top_importances,'stds':top_stds}
 
-    print rf_accs
     rf_accs[pre_path] = let_acc
+    featureSelection[pre_path] = feat_info
 
-with open('rf_accs_4mincount.json', 'w') as fp:
+with open('rf_accs_top3.json', 'w') as fp:
     json.dump(rf_accs, fp)
+
+with open('featureSelection_top3forests.json', 'w') as fd:
+    json.dump(featureSelection, fd)

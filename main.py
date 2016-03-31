@@ -15,7 +15,8 @@ from unsupervised import *
 ################ LOAD INPUT DATA ################
 #################################################
 
-path = 'texts/AD_TD_half_4letters/'
+#path = 'texts/AD_TD_half_4letters/'
+path = 'texts/ADHD_various_letters_half/5_word'
 #path = 'texts/AD_TD_full_4letters/'
 #path = 'texts/AD_4_full/'
 #path = 'texts/TD_4_full/'
@@ -50,10 +51,10 @@ nModels = 10 # number of times you want modeling to run
 nGrams = 10 # number of words in context ..only if running context calculation
 
 # for LDA
-runLDA = False  # whether to run LDA
+runLDA = False # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
-nWords = 3 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nWords = 4 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 1000 # number of iterations for sampling
 
 # for HDP
@@ -84,7 +85,7 @@ runBag = True
 nGramsinCorpus = False
 windowGrams = False
 gramsOnly = False
-mincount = 0 #4 #80 #150 #need massive number (like 3000) for network_wise words
+mincount = 4 #4 #80 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825 (vocab of 248 words)
 ###### without biGrams: (vocab of 236 words) gives around 0.8
 
@@ -244,15 +245,15 @@ for i in range(nModels):
    ###### CLASSIFICATION #######
 
    if not runDTM:
-       print "Running Elastic Net...\n"
-       enetACC[i] = eNetModel(data, labels, nFolds)
-       print "eNet ACC:", enetACC[i], "\n"
-
-
-       print "Running SVM...\n"
-       svmACC[i] = svmModel(data, labels, nFolds)
-       #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
-       print "svm ACC:", svmACC[i], "\n"
+    #    print "Running Elastic Net...\n"
+    #    enetACC[i] = eNetModel(data, labels, nFolds)
+    #    print "eNet ACC:", enetACC[i], "\n"
+       #
+       #
+    #    print "Running SVM...\n"
+    #    svmACC[i] = svmModel(data, labels, nFolds)
+    #    #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
+    #    print "svm ACC:", svmACC[i], "\n"
 
        print "Running RF with %i estimators...\n" %(nEstimators)
        rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)

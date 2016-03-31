@@ -254,7 +254,7 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
 
        train_data_features = tdf.toarray() #convert to numpy array
 
-   print "number of words in vocabulary:", len(train_data_features[0])
+   print "number of words in vocabulary:", len(train_data_features[0]), "\n"
 #   normed_data_features = []
 #   for feature_list in train_data_features:
 #       normed_feats = [float(Decimal(num)/Decimal(sum(feature_list))) for num in feature_list]
