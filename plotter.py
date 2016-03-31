@@ -6,8 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
-import csv
+import csv, json
 from sklearn import manifold
+from pandas.io.json import json_normalize
+
 #from unsupervised import jsd
 
 nTopics = 1 #20 #5 #10
@@ -18,6 +20,28 @@ nTimepoints = 164
 group = ['_network-wise']
 #def plot_divergence():
 
+
+def plotrfACC():
+    data = json.loads(open('rf_accs.json').read())
+
+    sns.set_style("dark")
+
+    f, (ax1, ax2) = plt.subplots(1, 2)
+    bar1 = ax1.bar(range(14),data["texts/ADHD_various_letters_half/"])
+    ax1.set_title('RF accs for half SAX')
+    plt.sca(ax1)
+    plt.xticks(np.arange(14) + .4, range(2,16))
+    plt.xlabel('# of bins (letters)/word')
+
+    bar2 = ax2.bar(range(14),data["texts/ADHD_various_letters_full/"])
+    ax2.set_title('RF accs for full SAX')
+    plt.sca(ax2)
+    plt.xticks(np.arange(14) + .4, range(2,16))
+    plt.xlabel('# of bins (letters)/word')
+
+    plt.show()
+
+plotrfACC()
 
 def mdsModel(sims):
     seed = np.random.RandomState(seed=3)
@@ -355,7 +379,7 @@ def plot_dynamics_diff(): #currently only have data for 1 topic for TD - ADHD
 #plot_relevance()
 #plot_dynamics()
 #plot_dynamics_diff()
-plot_BoW()
+#plot_BoW()
 
 
 #plt.plot(summed_tprop)

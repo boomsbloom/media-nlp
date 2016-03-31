@@ -17,7 +17,7 @@ delimiter = 'none'
 nGramsinCorpus = False
 windowGrams = False
 gramsOnly = False
-mincount = 0
+mincount = 4
 
 nModels = 5
 
@@ -73,11 +73,5 @@ for length in range(2):
     print rf_accs
     rf_accs[pre_path] = let_acc
 
-with open('rf_accs.json', 'w') as fp:
+with open('rf_accs_4mincount.json', 'w') as fp:
     json.dump(rf_accs, fp)
-
-
-
-
-
-#
