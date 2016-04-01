@@ -16,7 +16,9 @@ from unsupervised import *
 #################################################
 
 #path = 'texts/AD_TD_half_4letters/'
-path = 'texts/ADHD_various_letters_half/5_word'
+#path = 'texts/ADHD_various_letters_half/5_word'
+#path = 'texts/ADHD_various_letters_half/AD_4'
+path = 'texts/ADHD_various_letters_half/TD_4'
 #path = 'texts/AD_TD_full_4letters/'
 #path = 'texts/AD_4_full/'
 #path = 'texts/TD_4_full/'
@@ -218,10 +220,10 @@ for i in range(nModels):
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-       #myfile = open('TD_BoW_FULL_only_bigrams', 'wb')
-       #wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-       #wr.writerow(countFreq)
-       #wr.writerow(featureNames)
+       myfile = open('TD_4words_half', 'wb')
+       wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+       wr.writerow(countFreq)
+       wr.writerow(featureNames)
 
 
    elif runDoc2Vec:

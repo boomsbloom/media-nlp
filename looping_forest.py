@@ -19,7 +19,7 @@ windowGrams = False
 gramsOnly = False
 mincount = 0
 
-nModels = 5
+nModels = 10
 
 nLabelOne = 40 #number of TDs
 nLabelTwo = 40 #number of ADs
@@ -31,14 +31,14 @@ rf_accs = {}
 featureSelection = {}
 for length in range(2):
     if length == 0:
-        pre_path = 'texts/ADHD_various_letters_half/'
+        pre_path = 'texts/ADHD_various_half/'
     else:
-        pre_path = 'texts/ADHD_various_letters_full/'
+        pre_path = 'texts/ADHD_various_full/'
 
-    let_acc = [0] * 3 #14
+    let_acc = [0] * 14#14
     feat_info = {}#[[]] * 3
 
-    for let in range(2,5): #5 #16
+    for let in range(2,16): #5 #16
         path = pre_path + '%s_word'%(let)
 
         textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
@@ -92,8 +92,8 @@ for length in range(2):
     rf_accs[pre_path] = let_acc
     featureSelection[pre_path] = feat_info
 
-with open('rf_accs_top3.json', 'w') as fp:
+with open('rf_accs_nowindow.json', 'w') as fp:
     json.dump(rf_accs, fp)
 
-with open('featureSelection_top3forests.json', 'w') as fd:
+with open('featureSelection_nowindow.json', 'w') as fd:
     json.dump(featureSelection, fd)

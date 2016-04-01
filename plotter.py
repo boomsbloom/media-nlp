@@ -15,33 +15,72 @@ from pandas.io.json import json_normalize
 nTopics = 1 #20 #5 #10
 nDocuments = 40
 nTimepoints = 164
+nModels = 5
 #group = ['_TD','_AD'] #'' #'_AD'
 #group = ['']
 group = ['_network-wise']
 #def plot_divergence():
 
+def plotTopFeatures():
+    data = json.loads(open('featureSelection_top3forests.json').read())
+    curDat = data["texts/ADHD_various_letters_full/"]
+
+    rf_features = {}
+    for let in range(len(curDat)):
+        unique = list(set(sum(curDat[str(let)]['features'], [])))
+        curList = curDat[str(let)]['features']
+        features = dict([(key, {'importance':0,'std':0}) for key in unique])
+
+        for li in range(len(curList)):
+            for word in curList[li]:
+                index = curList[li].index(word)
+                importance = curDat[str(let)]['importance'][li][index]
+                #std = curDat[str(let)]['stds'][li][index]
+
+                if word in unique:
+                    features[word]['importance'] = features[word]['importance'] + importance
+                    #features[word]['std'] = features[word]['std'] + std
+
+        for i in range(len(features.values())):
+            features.values()[i]['importance'] = features.values()[i]['importance']/nModels
+            #features.values()[i]['std'] = features.values()[i]['std']/nModels
+
+        rf_features[let+2] = features
+
+        df = pd.DataFrame.from_dict(rf_features[let+2])
+        df = df.transpose()
+
+        fig = df.plot(x=df.index, y='importance', kind='bar')
+        plt.show()
+
+
+#plotTopFeatures()
 
 def plotrfACC():
-    data = json.loads(open('rf_accs.json').read())
+    #data = json.loads(open('rf_accs.json').read())
+    data = json.loads(open('rf_accs_top3.json').read())
+    nLetter = 3 #14
 
     sns.set_style("dark")
 
     f, (ax1, ax2) = plt.subplots(1, 2)
-    bar1 = ax1.bar(range(14),data["texts/ADHD_various_letters_half/"])
+    bar1 = ax1.bar(range(nLetter),data["texts/ADHD_various_letters_half/"])
     ax1.set_title('RF accs for half SAX')
     plt.sca(ax1)
-    plt.xticks(np.arange(14) + .4, range(2,16))
+    plt.xticks(np.arange(nLetter) + .4, range(2,nLetter+2))
     plt.xlabel('# of bins (letters)/word')
+    ax1.set_ylim([0.6,0.9])
 
-    bar2 = ax2.bar(range(14),data["texts/ADHD_various_letters_full/"])
+    bar2 = ax2.bar(range(nLetter),data["texts/ADHD_various_letters_full/"])
     ax2.set_title('RF accs for full SAX')
     plt.sca(ax2)
-    plt.xticks(np.arange(14) + .4, range(2,16))
+    plt.xticks(np.arange(nLetter) + .4, range(2,nLetter+2))
     plt.xlabel('# of bins (letters)/word')
+    ax2.set_ylim([0.6,0.9])
 
     plt.show()
 
-plotrfACC()
+#plotrfACC()
 
 def mdsModel(sims):
     seed = np.random.RandomState(seed=3)
@@ -110,12 +149,14 @@ def loadCSV(filename):
 
 def plot_BoW():
 
-    AD_freqs = loadCSV("AD_meanBoW_nowindow")
-    TD_freqs = loadCSV("TD_meanBoW_nowindow")
+    #AD_freqs = loadCSV("AD_meanBoW_nowindow")
+    #TD_freqs = loadCSV("TD_meanBoW_nowindow")
     #AD_freqs = loadCSV("AD_BoW_only_bigrams")
     #TD_freqs = loadCSV("TD_BoW_only_bigrams")
     #AD_freqs = loadCSV("AD_BoW_FULL_only_bigrams")
     #TD_freqs = loadCSV("TD_BoW_FULL_only_bigrams")
+    AD_freqs = loadCSV('AD_4words_half')
+    TD_freqs = loadCSV('TD_4words_half')
 
     floor = 0
 
@@ -140,15 +181,9 @@ def plot_BoW():
     #AD_freqs[0] = [count/(np.sum(AD_freqs[0])) for count in AD_freqs[0]] #normalizing
     #TD_freqs[0] = [count/(np.sum(TD_freqs[0])) for count in TD_freqs[0]] #normalizing
 
-    #top_RF = ['bbac','bccc','aaba','adca','dbdb','bddd','caab','acaa','ccbd','bccb']
-    #top_RF = [
-    #'bccb_bccb',
-    #'cbbb_bccb',
-    #'bcbc_bcbb',
-    #'cccc_bccb',
-    #'dbbc_cccc',
-    #]
-    AD_freqs[0] = AD_freqs[0][0:100]
+    top_RF = ['aaaa','daaa','aada','bbcc','accc','bccc']
+
+    AD_freqs[0] = AD_freqs[0]
     TD_freqs[0] = TD_freqs[0]#[0:30]
 
     def TDbyTopAD():
@@ -176,26 +211,27 @@ def plot_BoW():
         f1 = []
         f2 = []
         for i in range(len(freqs[1])):
+            print len(freqs[1])
+            print len(freqs[0])
             if freqs[1][i] in top_RF:
                 f1.append(freqs[0][i])
                 f2.append(freqs[1][i])
         f3 = [label] * len(f1)
         return [f1, f3, f2]
 
+    topRF = [[]] * 2
+    topRF[0] = topFeatCount(AD_freqs,'AD')
+    topRF[1] = topFeatCount(TD_freqs,'TD')
+    topRF = [topRF[0][0] + topRF[1][0], topRF[0][1] + topRF[1][1], topRF[0][2] + topRF[1][2]]
+    topRF = np.asarray(topRF)
+    top_freqCounts = pd.DataFrame(data=np.transpose(topRF),index=topRF[2],columns=['count','group','word'])
+    top_freqCounts["word"] = top_freqCounts["word"].astype('category')
+    top_freqCounts["group"] = top_freqCounts["group"].astype('category')
+    top_freqCounts["count"] = top_freqCounts["count"].astype('float')
 
-    # topRF = [[]] * 2
-    # topRF[0] = topFeatCount(AD_freqs,'AD')
-    # topRF[1] = topFeatCount(TD_freqs,'TD')
-    # topRF = [topRF[0][0] + topRF[1][0], topRF[0][1] + topRF[1][1], topRF[0][2] + topRF[1][2]]
-    # topRF = np.asarray(topRF)
-    # top_freqCounts = pd.DataFrame(data=np.transpose(topRF),index=topRF[2],columns=['count','group','word'])
-    # top_freqCounts["word"] = top_freqCounts["word"].astype('category')
-    # top_freqCounts["group"] = top_freqCounts["group"].astype('category')
-    # top_freqCounts["count"] = top_freqCounts["count"].astype('float')
-    #
-    # ax = sns.barplot(x="word", y="count", hue="group", data=top_freqCounts)
-    # sns.plt.title("Word counts for top 10 RF features")
-    # plt.show()
+    ax = sns.barplot(x="word", y="count", hue="group", data=top_freqCounts)
+    sns.plt.title("Word counts for top 10 RF features")
+    plt.show()
 
 
     # fig, ax = plt.subplots()
@@ -219,9 +255,9 @@ def plot_BoW():
     #
     # ax.legend((td_bar[0], ad_bar[0]), ('TD', 'AD'))
 
-    diffs = np.asarray(AD_freqs[0]) - np.asarray(TD_freqs[0])
+    # diffs = np.asarray(AD_freqs[0]) - np.asarray(TD_freqs[0])
 
-    plotWordDist(TD_freqs[1], diffs)
+    # plotWordDist(TD_freqs[1], diffs)
 
 
     #
@@ -379,7 +415,7 @@ def plot_dynamics_diff(): #currently only have data for 1 topic for TD - ADHD
 #plot_relevance()
 #plot_dynamics()
 #plot_dynamics_diff()
-#plot_BoW()
+plot_BoW()
 
 
 #plt.plot(summed_tprop)
