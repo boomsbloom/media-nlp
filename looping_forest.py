@@ -29,7 +29,7 @@ nEstimators = 1000 #1000 #number of estimators for random forest classifier
 
 rf_accs = {}
 featureSelection = {}
-for length in range(2):
+for length in range(1): #2
     if length == 0:
         pre_path = 'texts/ADHD_various_half/'
     else:
@@ -38,7 +38,7 @@ for length in range(2):
     let_acc = [0] * 14#14
     feat_info = {}#[[]] * 3
 
-    for let in range(2,16): #5 #16
+    for let in range(3,6): #5 #16 (2,16)
         path = pre_path + '%s_word'%(let)
 
         textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])

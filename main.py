@@ -18,7 +18,12 @@ from unsupervised import *
 #path = 'texts/AD_TD_half_4letters/'
 #path = 'texts/ADHD_various_letters_half/5_word'
 #path = 'texts/ADHD_various_letters_half/AD_4'
-path = 'texts/ADHD_various_letters_half/TD_4'
+#path = 'texts/ADHD_various_letters_half/TD_4'
+path = 'texts/ADHD_various_half/AD_4'
+#path = 'texts/ADHD_various_half/TD_4'
+
+csvName = 'AD_4letter_half'
+
 #path = 'texts/AD_TD_full_4letters/'
 #path = 'texts/AD_4_full/'
 #path = 'texts/TD_4_full/'
@@ -87,7 +92,7 @@ runBag = True
 nGramsinCorpus = False
 windowGrams = False
 gramsOnly = False
-mincount = 4 #4 #80 #150 #need massive number (like 3000) for network_wise words
+mincount = 0 #4 #80 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825 (vocab of 248 words)
 ###### without biGrams: (vocab of 236 words) gives around 0.8
 
@@ -220,7 +225,7 @@ for i in range(nModels):
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-       myfile = open('TD_4words_half', 'wb')
+       myfile = open(csvName, 'wb')
        wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
        wr.writerow(countFreq)
        wr.writerow(featureNames)
