@@ -84,7 +84,7 @@ def plotrfACC():
 
     plt.show()
 
-plotrfACC()
+#plotrfACC()
 
 def mdsModel(sims):
     seed = np.random.RandomState(seed=3)
@@ -140,6 +140,33 @@ def plotWordDist(words, diffs):
     plt.show()
 
 
+def plotActivationLevels():
+    #AD_inverse = [653,807,478]
+    #TD_inverse = [1085,907,1060]
+    #activations = AD_inverse + TD_inverse
+    #groups = ['AD'] * 3 + ['TD'] * 3
+    #networks = ['DMN\nSN','DMN\nLCEN','DMN\nRCEN'] * 2
+    AD_active = [441, 518, 588, 378, 277]
+    TD_active = [472, 486, 329, 208, 27]
+    activations = AD_active + TD_active
+    groups = ['AD'] * 5 + ['TD'] * 5
+    networks = ['SN\nLCEN','SN\nRCEN','LCEN\nRCEN','SN\nLCEN\nRCEN','All (task + DMN)'] * 2
+    dataMat = [activations, groups, networks]
+
+    activationMat = pd.DataFrame(data=np.transpose(dataMat),columns=['activations','groups','networks'])
+
+    activationMat["activations"] = activationMat["activations"].astype('float')
+    activationMat["groups"] = activationMat["groups"].astype('category')
+    activationMat["networks"] = activationMat["networks"].astype('category')
+
+    ax = sns.barplot(x="networks", y="activations", hue="groups", data=activationMat)
+    #sns.plt.title("Count of inverse network activation with DMN\n (a/b = inactive | c/d = active)")
+    sns.plt.title("Task network co-activation\n (c/d = active)")
+    ax.set_ylim([0,600])
+    #ax.set_ylim([400,1100])
+    plt.show()
+
+plotActivationLevels()
 
 def loadCSV(filename):
     with open(filename, 'rb') as f:
@@ -159,12 +186,12 @@ def plot_BoW():
     #TD_freqs = loadCSV("TD_BoW_only_bigrams")
     #AD_freqs = loadCSV("AD_BoW_FULL_only_bigrams")
     #TD_freqs = loadCSV("TD_BoW_FULL_only_bigrams")
-    #AD_freqs = loadCSV('AD_4words_half')
-    #TD_freqs = loadCSV('TD_4words_half')
-    AD_freqs = loadCSV('AD_5letter_half')
-    TD_freqs = loadCSV('TD_5letter_half')
+    AD_freqs = loadCSV('AD_4words_half')
+    TD_freqs = loadCSV('TD_4words_half')
+    #AD_freqs = loadCSV('AD_5letter_half')
+    #TD_freqs = loadCSV('TD_5letter_half')
 
-    floor = 0
+    floor = 1
 
     def topFreqs(freqs):
         l1 = []
@@ -189,16 +216,35 @@ def plot_BoW():
 
     #top_RF = ['aaaa','cccc','bbca','abac','cabb']
     #top_RF = ['bbac','bccc','aaba','dbdb','adca']
-    top_RF = ['eeee','aaba','abaa','bccc','deee']
+    #top_RF = ['eeee','aaba','abaa','bccc','deee']
 
-    AD_freqs[0] = AD_freqs[0]
-    TD_freqs[0] = TD_freqs[0]#[0:30]
+
+    word_list = []
+    #sub_list = ['bbcb','bccc','bccb','bbcc','bbcb','','','','','']
+    for w in range(len(TD_freqs[0])):
+        if (TD_freqs[1][w][2] == 'c' or TD_freqs[1][w][2] == 'd') and (TD_freqs[1][w][3] == 'c' or TD_freqs[1][w][3] == 'd') and (TD_freqs[1][w][1] == 'c' or TD_freqs[1][w][1] == 'd')  and (TD_freqs[1][w][0] == 'c' or TD_freqs[1][w][0] == 'd'):
+            #if TD_freqs[1][w] in sub_list: #not in
+            word_list.append(TD_freqs[1][w])
+
+    def sortByWords(l):
+        f1 = []
+        f2 = []
+        for w in range(len(TD_freqs[1])):
+            if l[1][w] in word_list:
+                f1.append(l[0][w])
+                f2.append(l[1][w])
+        return [f1, f2]
+
+    #AD_freqs[0] = AD_freqs[0]
+    #TD_freqs[0] = TD_freqs[0]#[0:30]#[0:30]
+    AD_freqs = sortByWords(AD_freqs)
+    TD_freqs = sortByWords(TD_freqs)
 
     def TDbyTopAD():
         f1 = []
         f2 = []
         for w in range(len(TD_freqs[1])):
-            if TD_freqs[1][w] in AD_freqs[1][0:100]:
+            if TD_freqs[1][w] in AD_freqs[1]:
                 f1.append(TD_freqs[0][w])
                 f2.append(TD_freqs[1][w])
         return [f1, f2]
@@ -225,26 +271,25 @@ def plot_BoW():
         f3 = [label] * len(f1)
         return [f1, f3, f2]
 
-    topRF = [[]] * 2
-    topRF[0] = topFeatCount(AD_freqs,'AD')
-    topRF[1] = topFeatCount(TD_freqs,'TD')
-    print topRF[1]
-    topRF = [topRF[0][0] + topRF[1][0], topRF[0][1] + topRF[1][1], topRF[0][2] + topRF[1][2]]
-    topRF = np.asarray(topRF)
-    top_freqCounts = pd.DataFrame(data=np.transpose(topRF),index=topRF[2],columns=['count','group','word'])
-    top_freqCounts["word"] = top_freqCounts["word"].astype('category')
-    top_freqCounts["group"] = top_freqCounts["group"].astype('category')
-    top_freqCounts["count"] = top_freqCounts["count"].astype('float')
-
-    ax = sns.barplot(x="word", y="count", hue="group", data=top_freqCounts)
-    sns.plt.title("Word counts for top 5 RF features")
-    plt.show()
+    # topRF = [[]] * 2
+    # topRF[0] = topFeatCount(AD_freqs,'AD')
+    # topRF[1] = topFeatCount(TD_freqs,'TD')
+    # topRF = [topRF[0][0] + topRF[1][0], topRF[0][1] + topRF[1][1], topRF[0][2] + topRF[1][2]]
+    # topRF = np.asarray(topRF)
+    # top_freqCounts = pd.DataFrame(data=np.transpose(topRF),index=topRF[2],columns=['count','group','word'])
+    # top_freqCounts["word"] = top_freqCounts["word"].astype('category')
+    # top_freqCounts["group"] = top_freqCounts["group"].astype('category')
+    # top_freqCounts["count"] = top_freqCounts["count"].astype('float')
+    #
+    # ax = sns.barplot(x="word", y="count", hue="group", data=top_freqCounts)
+    # sns.plt.title("Word counts for top 5 RF features")
+    # plt.show()
 
 
     # fig, ax = plt.subplots()
     # axes = fig.gca()
     # index = np.arange(len(TD_freqs[0]))
-    # td_bar = ax.bar(index,TD_freqs[0],color='r',alpha=0.7) #s=20 should be abstracted to number of words in topics
+    # td_bar = ax.bar(index,TD_freqs[0],color='r',alpha=0.7)
     # bar_width = 0.35
     # plt.xticks(index + bar_width, (map(str,range(len(TD_freqs[0])))))
     # ax.set_xticklabels(TD_freqs[1])
@@ -253,7 +298,7 @@ def plot_BoW():
     # axes.set_ylim([0,100]) #0, 550
     #
     # index = np.arange(len(AD_freqs[0]))
-    # ad_bar = ax.bar(index,AD_freqs[0],alpha=0.7) #s=20 should be abstracted to number of words in topics
+    # ad_bar = ax.bar(index,AD_freqs[0],alpha=0.7)
     # plt.xticks(index + bar_width, (map(str,range(len(AD_freqs[0])))))
     # ax.set_xticklabels(AD_freqs[1])
     # for label in ax.get_xticklabels():
@@ -261,34 +306,42 @@ def plot_BoW():
     # sns.plt.title("AD Top 20 states")
     #
     # ax.legend((td_bar[0], ad_bar[0]), ('TD', 'AD'))
-
-    # diffs = np.asarray(AD_freqs[0]) - np.asarray(TD_freqs[0])
-
+    AD_freqs[0] = AD_freqs[0][0:200]
+    TD_freqs[0] = TD_freqs[0][0:200]
+    diffs = np.asarray(AD_freqs[0]) - np.asarray(TD_freqs[0])
+    AD_count = 0
+    TD_count = 0
+    for val in diffs:
+        if val < 0:
+            TD_count += val
+        else:
+            AD_count += val
+    print 'TD:', abs(TD_count), 'AD:', AD_count, 'Diff:', abs(abs(TD_count)-AD_count)
     # plotWordDist(TD_freqs[1], diffs)
 
 
     #
-    # fig, ax = plt.subplots()
-    # axes = fig.gca()
-    # index = np.arange(len(TD_freqs[0]))
-    # td_bar = ax.bar(index,diffs,color='g') #s=20 should be abstracted to number of words in topics
-    # bar_width = 0.35
-    # plt.xticks(index + bar_width, (map(str,range(len(TD_freqs[0])))))
-    # ax.set_xticklabels(TD_freqs[1])
-    # for label in ax.get_xticklabels():
-    #   label.set_rotation(90)
-    # axes.set_ylim([-20,30]) #0, 550
-    # sns.plt.title("AD Top 100 states by word count (AD - TD)")
+    fig, ax = plt.subplots()
+    axes = fig.gca()
+    index = np.arange(len(TD_freqs[0]))
+    td_bar = ax.bar(index,diffs,color='g') #s=20 should be abstracted to number of words in topics
+    bar_width = 0.35
+    plt.xticks(index + bar_width, (map(str,range(len(TD_freqs[0])))))
+    ax.set_xticklabels(TD_freqs[1])
+    for label in ax.get_xticklabels():
+      label.set_rotation(90)
+    axes.set_ylim([-100,100]) #0, 550
+    sns.plt.title("AD Top 100 states by word count (AD - TD)")
 
 
     #plt.show()
 
-def plot_Networkletters():
+def plot_Networkletters(documents, title, letters):
+
     DMN = []
     SN = []
     LECN = []
     RECN = []
-    letters = ['a','b','c','d']
     for doc in documents:
         for word in documents[doc]:
             DMN.append(word[0])
@@ -316,14 +369,13 @@ def plot_Networkletters():
     a.index = letters
 
     fig = a.plot(x=a.index, y=a.columns, kind='bar')
-    fig.set_ylim([400,1200])
+    fig.set_ylim([1000,1200])
     for label in fig.get_xticklabels():
       label.set_rotation(360)
 
 
-    sns.plt.title("AD (half) letter counts")
+    sns.plt.title(title)
     plt.show()
-
 
 def plot_relevance():
     '''
@@ -422,7 +474,7 @@ def plot_dynamics_diff(): #currently only have data for 1 topic for TD - ADHD
 #plot_relevance()
 #plot_dynamics()
 #plot_dynamics_diff()
-#plot_BoW()
+plot_BoW()
 
 
 #plt.plot(summed_tprop)
