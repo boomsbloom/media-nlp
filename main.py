@@ -9,29 +9,21 @@ from contexts import getnGrams
 from occurrences import *
 from supervised import *
 from unsupervised import *
+from plotter import *
 #from unsupervised import ldaModel
 
 #################################################
 ################ LOAD INPUT DATA ################
 #################################################
 
-#path = 'texts/AD_TD_half_4letters/'
-#path = 'texts/ADHD_various_letters_half/5_word'
-#path = 'texts/ADHD_various_letters_half/AD_4'
-#path = 'texts/ADHD_various_letters_half/TD_4'
-path = 'texts/ADHD_various_half/AD_4'
-#path = 'texts/ADHD_various_half/TD_4'
+#path = 'texts/multiple_sites_half/PKU/full'
+#path = 'texts/multiple_sites_half/OHSU/full'
+#path = 'texts/multiple_sites_half/all_data'
+path = 'texts/multiple_sites_half/NYU_and_PKU'
 
-csvName = 'AD_4letter_half'
-
-#path = 'texts/AD_TD_full_4letters/'
-#path = 'texts/AD_4_full/'
-#path = 'texts/TD_4_full/'
-#path = 'texts/AD_TD_4letter_4wordwindow'
-#path = 'texts/AD_4_window'
-#path = 'texts/TD_4_window'
-#path = 'texts/AD_TD_window_normed'
-#path = 'texts/AD_4_half'
+title = "TD letter counts"
+#letters = ['a','b','c','d','e']
+letters = ['b','c']
 #path = 'texts/TD_4_half'
 textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
 
@@ -45,8 +37,9 @@ if isCorpus:
     scripts = 'topicalPhrases/rawFiles/4letters_full_corpus.txt'
 else:
     scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
-    if len(scripts) > 80: #removing .DS_Store
-       scripts = scripts[1:len(scripts)]
+    for script in scripts:
+        if '.DS_Store' in script:
+            scripts.remove(script)
 
 #################################################
 ############### CHOOSE PARAMETERS ###############
@@ -103,8 +96,8 @@ mincount = 0 #4 #80 #150 #need massive number (like 3000) for network_wise words
 runDoc2Vec = False
 
 # for classification
-nLabelOne = 40 #number of TDs
-nLabelTwo = 40 #number of ADs
+nLabelOne = 70#30#40 #number of TDs
+nLabelTwo = 70#30#40 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 nFolds = len(labels) #leave-one-out
 nEstimators = 1000 #1000 #number of estimators for random forest classifier
@@ -118,6 +111,7 @@ runClassification = True # run classification on topic probabilities
 
 # Create dictionary with list of processed words for each document key
 documents = getDocuments(scripts, delimiter, isCorpus, textNames)
+#plot_Networkletters(documents, title, letters)
 
 if network_wise:
 
@@ -225,10 +219,10 @@ for i in range(nModels):
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-       myfile = open(csvName, 'wb')
-       wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-       wr.writerow(countFreq)
-       wr.writerow(featureNames)
+    #    myfile = open(csvName, 'wb')
+    #    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    #    wr.writerow(countFreq)
+    #    wr.writerow(featureNames)
 
 
    elif runDoc2Vec:
@@ -279,8 +273,8 @@ if not runDTM:
     print "==================================\n"
     #if not runTimeseries:
     #    print "kmeans acc mean:", np.mean(kACC)
-    print "enet acc mean:", np.mean(enetACC)
-    print "svm acc mean:", np.mean(svmACC)
+    #print "enet acc mean:", np.mean(enetACC)
+    #print "svm acc mean:", np.mean(svmACC)
     print "rf acc mean:", np.mean(rfACC)
 
 

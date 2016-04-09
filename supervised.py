@@ -3,7 +3,7 @@
 '''
 
 from sklearn.cross_validation import KFold
-from sklearn import decomposition, manifold, svm, grid_search
+from sklearn import decomposition, manifold, svm, grid_search, metrics
 from sklearn.ensemble import RandomForestClassifier
 from decimal import *
 import numpy as np
@@ -84,7 +84,7 @@ def rfModel(data, labels, nFolds, nEstimators):
        if label_test == rf.predict(data_test):
            acc += 1
 
-       #print label_test, rf.predict(data_test)
+       print label_test, rf.predict(data_test)
        importances[count] = rf.feature_importances_
        std[count] = np.std([tree.feature_importances_ for tree in rf.estimators_], axis=0)
        #indices = np.argsort(importances)[::-1]
