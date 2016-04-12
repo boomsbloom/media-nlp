@@ -16,10 +16,15 @@ from plotter import *
 ################ LOAD INPUT DATA ################
 #################################################
 
-#path = 'texts/multiple_sites_half/PKU/full'
-#path = 'texts/multiple_sites_half/OHSU/full'
+#path = 'texts/multiple_sites_half/PKU/both'
+#path = 'texts/multiple_sites_full/OHSU/both'
 #path = 'texts/multiple_sites_half/all_data'
-path = 'texts/multiple_sites_half/NYU_and_PKU'
+#path = 'texts/multiple_sites_half/NYU_and_PKU'
+#path = 'texts/multiple_sites_half/NYU/both'
+#path = 'texts/multiple_sites_full_2letter/PKU/both'
+#path = 'texts/multiple_sites_full_2letter/all_data'
+path = 'texts/multiple_sites_full_2letter/NYU_PKU'
+#path = 'texts/ADHD_various_half/2_word/'
 
 title = "TD letter counts"
 #letters = ['a','b','c','d','e']
@@ -54,17 +59,17 @@ nGrams = 10 # number of words in context ..only if running context calculation
 runLDA = False # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
 nTopics = 10 # number of topics to create
-nWords = 4 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
-nIters = 1000 # number of iterations for sampling
+nWords = 20 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nIters = 500 # number of iterations for sampling
 
 # for HDP
 runHDP = False  # whether to run HDP
-tLimit = 150#150 # limit on number of topics to look for (default is 150)
+tLimit = 150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
 # for DTM
 runDTM = False
-nTopics = 10 #20
+#nTopics = 10 #20
 nDocuments = 80
 nTimepoints = 164
 single_doc = False
@@ -82,10 +87,10 @@ runWord2Vec = False
 
 # for bag of words classification
 runBag = True
-nGramsinCorpus = False
+nGramsinCorpus = True #False
 windowGrams = False
 gramsOnly = False
-mincount = 0 #4 #80 #150 #need massive number (like 3000) for network_wise words
+mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825 (vocab of 248 words)
 ###### without biGrams: (vocab of 236 words) gives around 0.8
 
@@ -96,8 +101,8 @@ mincount = 0 #4 #80 #150 #need massive number (like 3000) for network_wise words
 runDoc2Vec = False
 
 # for classification
-nLabelOne = 70#30#40 #number of TDs
-nLabelTwo = 70#30#40 #number of ADs
+nLabelOne = 70#90#40#70#30 #number of TDs
+nLabelTwo = 70#90#40#70#30 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 nFolds = len(labels) #leave-one-out
 nEstimators = 1000 #1000 #number of estimators for random forest classifier
@@ -246,15 +251,15 @@ for i in range(nModels):
    ###### CLASSIFICATION #######
 
    if not runDTM:
-    #    print "Running Elastic Net...\n"
-    #    enetACC[i] = eNetModel(data, labels, nFolds)
-    #    print "eNet ACC:", enetACC[i], "\n"
+       print "Running Elastic Net...\n"
+       enetACC[i] = eNetModel(data, labels, nFolds)
+       print "eNet ACC:", enetACC[i], "\n"
        #
        #
-    #    print "Running SVM...\n"
-    #    svmACC[i] = svmModel(data, labels, nFolds)
-    #    #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
-    #    print "svm ACC:", svmACC[i], "\n"
+       print "Running SVM...\n"
+       svmACC[i] = svmModel(data, labels, nFolds)
+       #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
+       print "svm ACC:", svmACC[i], "\n"
 
        print "Running RF with %i estimators...\n" %(nEstimators)
        rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
@@ -262,8 +267,8 @@ for i in range(nModels):
        idx = (-importances[i]).argsort()[:10]
 
        print "Top 10 features:"
-       for j in idx:
-           print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
+       #for j in idx:
+        #   print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
 
        print "\nrf ACC:", rfACC[i], "\n"
 

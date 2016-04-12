@@ -182,17 +182,68 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
        elif gramsOnly:
           bigramList = []
           for item in nltk.bigrams(" ".join(documents[text]).split()):
-              bigramList.append('_'.join(item))
+              if 'bccc' in item or 'bbac' in item or 'aaba' in item or 'adca' in item or 'dbdb' in item:
+                  bigramList.append('_'.join(item))
           textList.append(' '.join(bigramList))
        elif not nGram:
            textList.append(" ".join(documents[text]))
        else:
            bigramList = []
+           filteredDocList = []
            for item in nltk.bigrams(" ".join(documents[text]).split()):
-               bigramList.append('_'.join(item))
-           tempList = bigramList + documents[text]
+                #if 'bccc' in item or 'bbac' in item or 'aaba' in item or 'adca' in item or 'dbdb' in item:
+                #if ('bccc' in item and 'cbcd' in item) or ('bccc' in item and 'bbcc' in item) or ('bccc' in item and 'bbcb' in item):
+                #if 'bccc' in item or 'bddd' in item:
+                #if 'bbbb' in item or 'aaaa' in item or 'aaab' in item or 'abab' in item or 'baba' in item:
+                    bigramList.append('_'.join(item))
+                # for word in item:
+                #     if (word[0] == 'a' and word[1] == 'b'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'b' and word[1] == 'a'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'b' and word[3] == 'a'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'a' and word[3] == 'b'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'a' and word[1] == 'a'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'a' and word[3] == 'a'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'b' and word[3] == 'b'):
+                #         bigramList.append('_'.join(item))
+                #     elif(word[0] == 'b' and word[1] == 'b'):
+                #         bigramList.append('_'.join(item))
+
+                    # elif(word[0] == 'b' and word[1] == 'b' and word[2] == 'b' and word[3] == 'b'):
+                    #     bigramList.append('_'.join(item))
+                    # elif(word[0] == 'a' and word[1] == 'a' and word[2] == 'a' and word[3] == 'a'):
+                    #     bigramList.append('_'.join(item))
+
+                #for word in item:
+                #    if (word[0] == 'b') and (word[1] == 'c') and (word[3] == 'c') and w:
+        #               bigramList.append('_'.join(item))
+           #top_features = ['aaba','acaa','adca','bbac','bccb','bccc','bddd','caab','ccbd','dbdb']
+          # top_features = ['bccc','bddd','adca']#,'bddd','accc','addd']#,'bbac']#,'aaba','adca','bbac']
+           #top_features = ['cbad','cbac','bccc','acaa','acab','dbdb']#,'bcac','bcdc']
+           #top_features = ['bccc','bcac','bcbb','bccb','bcdc','bcca']
+           #top_features = ['bccc','bbac']
+           #top_features = ['bbac','bccc','aaba','adca','dbdb']
+           top_features = []
+           for word in documents[text]:
+               if word in top_features:
+            #   if (word[0] == 'a' or word[0] == 'b') and (word[1] == 'c' or word[1] == 'd'):
+            #if (word[0] == 'b') and (word[1] == 'c') and (word[3] == 'c') and (word[2] == 'c'):
+                   filteredDocList.append(word)
+            #   elif (word[0] == 'c' or word[0] == 'd') and (word[1] == 'a' or word[1] == 'b'):
+            #       filteredDocList.append(word)
+            #   elif (word[0] == 'a' or word[0] == 'b') and (word[3] == 'c' or word[3] == 'd'):
+            #       filteredDocList.append(word)
+            #   elif (word[0] == 'c' or word[0] == 'd') and (word[3] == 'a' or word[3] == 'b'):
+            #       filteredDocList.append(word)
+           tempList = bigramList + filteredDocList#documents[text]
            textList.append(' '.join(tempList))
 
+   #print textList
    print "Creating bag of words model...\n"
 
    vectorizer = CountVectorizer(analyzer = "word", #Count or Tfidf Vectorizer
@@ -215,6 +266,7 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
    if toReduce != 0:
 
        vocab = vectorizer.get_feature_names()
+       #print vocab
 
        dist = np.sum(train_data_features, axis=0)
 
@@ -231,8 +283,8 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
 
        for text in texts:
            if not nGram:
-               reducedTextList.append(" ".join([i for i in documents[text] if i in set(newVocab)]))
-               reducedTextDic[text] = ([i for i in documents[text] if i in set(newVocab)])
+                reducedTextList.append(" ".join([i for i in documents[text] if i in set(newVocab)]))
+                reducedTextDic[text] = ([i for i in documents[text] if i in set(newVocab)])
            else:
                bigramList = []
                for item in nltk.bigrams(" ".join(documents[text]).split()):
@@ -267,8 +319,12 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
 def hdpModel(texts, documents, tLimit, forClass):
 
     textList = []
+    bigramList = []
     for text in texts:
-        textList.append(documents[text])
+    #     textList.append(documents[text])
+        for item in nltk.bigrams(" ".join(documents[text]).split()):
+            bigramList.append('_'.join(item))
+        textList.append(bigramList)
 
     if forClass:
 
@@ -285,7 +341,7 @@ def hdpModel(texts, documents, tLimit, forClass):
                 topicProb[prob[0]] = prob[1]
             topicProbs[text] = topicProb
         topics = hdp.print_topics(topics=151, topn=10)
-        #print topics
+        print topics
 
         return topicProbs
 
@@ -318,6 +374,7 @@ def hdpModel(texts, documents, tLimit, forClass):
 
 def ldaModel(texts,topics,iters, nWords, documents):
     vocab, dtm = getVocab(texts, documents)
+    #dtm, reducedTextDic, vocab = bagOfWords(texts, documents, True, 0, False, False)
 
     model = lda.LDA(n_topics=topics, n_iter=iters, random_state=1)
     model.fit(dtm)

@@ -3,12 +3,13 @@ Cannot run in Gensim virtual env
 '''
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import seaborn as sns
+#import matplotlib.pyplot as plt
+#import matplotlib.patches as mpatches
+#import seaborn as sns
 import csv, json
 from sklearn import manifold
 from pandas.io.json import json_normalize
+from scipy import stats
 
 #from unsupervised import jsd
 
@@ -166,7 +167,7 @@ def plotActivationLevels():
     #ax.set_ylim([400,1100])
     plt.show()
 
-plotActivationLevels()
+#plotActivationLevels()
 
 def loadCSV(filename):
     with open(filename, 'rb') as f:
@@ -191,7 +192,7 @@ def plot_BoW():
     #AD_freqs = loadCSV('AD_5letter_half')
     #TD_freqs = loadCSV('TD_5letter_half')
 
-    floor = 1
+    floor = 0
 
     def topFreqs(freqs):
         l1 = []
@@ -221,10 +222,14 @@ def plot_BoW():
 
     word_list = []
     #sub_list = ['bbcb','bccc','bccb','bbcc','bbcb','','','','','']
-    for w in range(len(TD_freqs[0])):
-        if (TD_freqs[1][w][2] == 'c' or TD_freqs[1][w][2] == 'd') and (TD_freqs[1][w][3] == 'c' or TD_freqs[1][w][3] == 'd') and (TD_freqs[1][w][1] == 'c' or TD_freqs[1][w][1] == 'd')  and (TD_freqs[1][w][0] == 'c' or TD_freqs[1][w][0] == 'd'):
+    print len(AD_freqs[0])
+    print len(TD_freqs[0])
+    for w in range(len(AD_freqs[0])):
+        #if (TD_freqs[1][w][2] == 'c' or TD_freqs[1][w][2] == 'd') and (TD_freqs[1][w][3] == 'c' or TD_freqs[1][w][3] == 'd') and (TD_freqs[1][w][1] == 'c' or TD_freqs[1][w][1] == 'd')  and (TD_freqs[1][w][0] == 'c' or TD_freqs[1][w][0] == 'd'):
+        if (AD_freqs[1][w][0] == 'a' or AD_freqs[1][w][0] == 'b') and (AD_freqs[1][w][1] == 'c' or AD_freqs[1][w][1] == 'd'):
             #if TD_freqs[1][w] in sub_list: #not in
             word_list.append(TD_freqs[1][w])
+    print word_list
 
     def sortByWords(l):
         f1 = []
@@ -474,7 +479,7 @@ def plot_dynamics_diff(): #currently only have data for 1 topic for TD - ADHD
 #plot_relevance()
 #plot_dynamics()
 #plot_dynamics_diff()
-plot_BoW()
+#plot_BoW()
 
 
 #plt.plot(summed_tprop)

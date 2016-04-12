@@ -84,7 +84,7 @@ def rfModel(data, labels, nFolds, nEstimators):
        if label_test == rf.predict(data_test):
            acc += 1
 
-       print label_test, rf.predict(data_test)
+      # print label_test, rf.predict(data_test)
        importances[count] = rf.feature_importances_
        std[count] = np.std([tree.feature_importances_ for tree in rf.estimators_], axis=0)
        #indices = np.argsort(importances)[::-1]
