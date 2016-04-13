@@ -20,8 +20,8 @@ from unsupervised import *
 #path = 'texts/multiple_sites_full/OHSU/both'
 #path = 'texts/multiple_sites_half/all_data'
 #path = 'texts/multiple_sites_half/NYU_and_PKU'
-#path = 'texts/multiple_sites_half/NYU/both'
-path = 'texts/multiple_sites_full_2letter/NYU/both'
+path = 'texts/multiple_sites_half/NYU/both'
+#path = 'texts/multiple_sites_full_2letter/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/all_data'
 #path = 'texts/multiple_sites_full_2letter/NYU_PKU'
 #path = 'texts/ADHD_various_half/2_word/'
@@ -87,7 +87,7 @@ runWord2Vec = False
 
 # for bag of words classification
 runBag = True
-nGramsinCorpus = True #False
+nGramsinCorpus = False #True
 windowGrams = False
 gramsOnly = False
 mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise words
