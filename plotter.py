@@ -3,9 +3,9 @@ Cannot run in Gensim virtual env
 '''
 import pandas as pd
 import numpy as np
-#import matplotlib.pyplot as plt
-#import matplotlib.patches as mpatches
-#import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import seaborn as sns
 import csv, json
 from sklearn import manifold
 from pandas.io.json import json_normalize
@@ -187,8 +187,15 @@ def plot_BoW():
     #TD_freqs = loadCSV("TD_BoW_only_bigrams")
     #AD_freqs = loadCSV("AD_BoW_FULL_only_bigrams")
     #TD_freqs = loadCSV("TD_BoW_FULL_only_bigrams")
-    AD_freqs = loadCSV('AD_4words_half')
-    TD_freqs = loadCSV('TD_4words_half')
+    #AD_freqs = loadCSV('AD_4words_half')
+    #TD_freqs = loadCSV('TD_4words_half')
+
+    #AD_freqs = loadCSV('NYU_AD_2letter_bigrams_BoW')
+    #TD_freqs = loadCSV('NYU_TD_2letter_bigrams_BoW')
+    AD_freqs = loadCSV('NYU_AD_2letter_trigrams_BoW')
+    TD_freqs = loadCSV('NYU_TD_2letter_trigrams_BoW')
+
+
     #AD_freqs = loadCSV('AD_5letter_half')
     #TD_freqs = loadCSV('TD_5letter_half')
 
@@ -212,6 +219,8 @@ def plot_BoW():
     AD_freqs = topFreqs(AD_freqs)
     TD_freqs = topFreqs(TD_freqs)
 
+    #print AD_freqs
+    #print TD_freqs
     #AD_freqs[0] = [count/(np.sum(AD_freqs[0])) for count in AD_freqs[0]] #normalizing
     #TD_freqs[0] = [count/(np.sum(TD_freqs[0])) for count in TD_freqs[0]] #normalizing
 
@@ -222,11 +231,13 @@ def plot_BoW():
 
     word_list = []
     #sub_list = ['bbcb','bccc','bccb','bbcc','bbcb','','','','','']
-    print len(AD_freqs[0])
-    print len(TD_freqs[0])
+    #uncorrected_significant = ['aaaa_abaa', 'aaaa_abab', 'aaaa_abba', 'aaaa_abbb', 'aaaa_baba', 'aaab_baba', 'aaab_babb', 'aaab_bbaa', 'aaba_babb', 'aabb_aaba', 'abab_bbbb', 'abba_aaaa', 'abbb_abaa', 'abbb_babb', 'abbb_bbbb', 'baaa_abbb', 'baab_aaba', 'baab_abab', 'baab_baaa', 'baba_aabb', 'baba_bbab', 'babb_aabb', 'babb_baab', 'bbab_bbab', 'bbba_babb', 'bbbb_abab', 'bbbb_bbab', 'bbbb_bbbb']
+    uncorrected_significant = ['aaaa_aaaa_bbbb', 'aaaa_aaba_bbaa', 'aaaa_abab_abbb', 'aaaa_baaa_aaaa', 'aaaa_baba_abbb', 'aaba_baab_baab', 'aaba_baab_bbab', 'abaa_baaa_baab', 'abba_aaaa_abbb', 'abba_baaa_babb', 'abba_baab_baaa', 'abba_baab_bbbb', 'abbb_aaba_aaaa', 'abbb_abbb_aaaa', 'abbb_baaa_baba', 'abbb_bbbb_bbab', 'abbb_bbbb_bbba', 'baaa_abaa_bbab', 'baaa_abba_aaaa', 'baaa_abbb_aabb', 'baaa_baab_bbba', 'baaa_bbbb_abbb', 'baab_aaba_aaba', 'baab_aabb_bbbb', 'baba_aaaa_bbaa', 'baba_baaa_baaa', 'babb_bbaa_aaba', 'bbaa_abbb_bbbb', 'bbab_baaa_baaa', 'bbbb_aaaa_babb', 'bbbb_abbb_aabb', 'bbbb_abbb_bbbb', 'bbbb_baaa_bbbb', 'bbbb_bbab_aaaa', 'bbbb_bbbb_aaaa', 'bbbb_bbbb_abbb', 'bbbb_bbbb_baaa']
     for w in range(len(AD_freqs[0])):
         #if (TD_freqs[1][w][2] == 'c' or TD_freqs[1][w][2] == 'd') and (TD_freqs[1][w][3] == 'c' or TD_freqs[1][w][3] == 'd') and (TD_freqs[1][w][1] == 'c' or TD_freqs[1][w][1] == 'd')  and (TD_freqs[1][w][0] == 'c' or TD_freqs[1][w][0] == 'd'):
-        if (AD_freqs[1][w][0] == 'a' or AD_freqs[1][w][0] == 'b') and (AD_freqs[1][w][1] == 'c' or AD_freqs[1][w][1] == 'd'):
+        #if (AD_freqs[1][w][0] == 'a' or AD_freqs[1][w][0] == 'b') and (AD_freqs[1][w][1] == 'c' or AD_freqs[1][w][1] == 'd'):
+        #if (TD_freqs[1][w][0:4] == 'aaaa'):
+        if TD_freqs[1][w] in uncorrected_significant:
             #if TD_freqs[1][w] in sub_list: #not in
             word_list.append(TD_freqs[1][w])
     print word_list
@@ -234,14 +245,15 @@ def plot_BoW():
     def sortByWords(l):
         f1 = []
         f2 = []
-        for w in range(len(TD_freqs[1])):
+        for w in range(len(l[1])):
+            print l[1][w]
             if l[1][w] in word_list:
                 f1.append(l[0][w])
                 f2.append(l[1][w])
         return [f1, f2]
 
-    #AD_freqs[0] = AD_freqs[0]
-    #TD_freqs[0] = TD_freqs[0]#[0:30]#[0:30]
+    #AD_freqs[0] = AD_freqs[0][0:30]
+    #TD_freqs[0] = TD_freqs[0][0:30]#[0:30]#[0:30]
     AD_freqs = sortByWords(AD_freqs)
     TD_freqs = sortByWords(TD_freqs)
 
@@ -265,6 +277,9 @@ def plot_BoW():
     l1 = TDbyTopAD()
     l2 = sorted(l1[1],key=AD_freqs[1].index)
     TD_freqs = getSortedIndex(l1, l2)
+
+    AD_freqs[0] = AD_freqs[0]#[0:30]
+    TD_freqs[0] = TD_freqs[0]#[0:30]
 
     def topFeatCount(freqs,label):
         f1 = []
@@ -290,7 +305,7 @@ def plot_BoW():
     # sns.plt.title("Word counts for top 5 RF features")
     # plt.show()
 
-
+    #
     # fig, ax = plt.subplots()
     # axes = fig.gca()
     # index = np.arange(len(TD_freqs[0]))
@@ -308,7 +323,7 @@ def plot_BoW():
     # ax.set_xticklabels(AD_freqs[1])
     # for label in ax.get_xticklabels():
     #   label.set_rotation(90)
-    # sns.plt.title("AD Top 20 states")
+    # sns.plt.title("AD states")
     #
     # ax.legend((td_bar[0], ad_bar[0]), ('TD', 'AD'))
     AD_freqs[0] = AD_freqs[0][0:200]
@@ -335,11 +350,11 @@ def plot_BoW():
     ax.set_xticklabels(TD_freqs[1])
     for label in ax.get_xticklabels():
       label.set_rotation(90)
-    axes.set_ylim([-100,100]) #0, 550
-    sns.plt.title("AD Top 100 states by word count (AD - TD)")
+    axes.set_ylim([-15,15]) #0, 550
+    #sns.plt.title("AD Top 100 states by word count (AD - TD)")
+    sns.plt.title("AD - TD")
 
-
-    #plt.show()
+    plt.show()
 
 def plot_Networkletters(documents, title, letters):
 
@@ -479,7 +494,7 @@ def plot_dynamics_diff(): #currently only have data for 1 topic for TD - ADHD
 #plot_relevance()
 #plot_dynamics()
 #plot_dynamics_diff()
-#plot_BoW()
+plot_BoW()
 
 
 #plt.plot(summed_tprop)

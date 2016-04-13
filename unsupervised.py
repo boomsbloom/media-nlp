@@ -13,6 +13,7 @@ from decimal import *
 import numpy as np
 import pandas as pd
 import lda, nltk, time
+from nltk.util import ngrams
 
 def getKey(item):
     return item[1]
@@ -190,12 +191,14 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
        else:
            bigramList = []
            filteredDocList = []
-           for item in nltk.bigrams(" ".join(documents[text]).split()):
+           for item in ngrams(documents[text],2):
+               bigramList.append("_".join(item))
+        #   for item in nltk.bigrams(" ".join(documents[text]).split()):
                 #if 'bccc' in item or 'bbac' in item or 'aaba' in item or 'adca' in item or 'dbdb' in item:
                 #if ('bccc' in item and 'cbcd' in item) or ('bccc' in item and 'bbcc' in item) or ('bccc' in item and 'bbcb' in item):
                 #if 'bccc' in item or 'bddd' in item:
                 #if 'bbbb' in item or 'aaaa' in item or 'aaab' in item or 'abab' in item or 'baba' in item:
-                    bigramList.append('_'.join(item))
+        #            bigramList.append('_'.join(item))
                 # for word in item:
                 #     if (word[0] == 'a' and word[1] == 'b'):
                 #         bigramList.append('_'.join(item))

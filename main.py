@@ -9,7 +9,7 @@ from contexts import getnGrams
 from occurrences import *
 from supervised import *
 from unsupervised import *
-from plotter import *
+#from plotter import *
 #from unsupervised import ldaModel
 
 #################################################
@@ -21,9 +21,9 @@ from plotter import *
 #path = 'texts/multiple_sites_half/all_data'
 #path = 'texts/multiple_sites_half/NYU_and_PKU'
 #path = 'texts/multiple_sites_half/NYU/both'
-#path = 'texts/multiple_sites_full_2letter/PKU/both'
+path = 'texts/multiple_sites_full_2letter/NYU/both'
 #path = 'texts/multiple_sites_full_2letter/all_data'
-path = 'texts/multiple_sites_full_2letter/NYU_PKU'
+#path = 'texts/multiple_sites_full_2letter/NYU_PKU'
 #path = 'texts/ADHD_various_half/2_word/'
 
 title = "TD letter counts"
@@ -101,8 +101,8 @@ mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise word
 runDoc2Vec = False
 
 # for classification
-nLabelOne = 70#90#40#70#30 #number of TDs
-nLabelTwo = 70#90#40#70#30 #number of ADs
+nLabelOne = 40#70#90#40#70#30 #number of TDs
+nLabelTwo = 40#70#90#40#70#30 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 nFolds = len(labels) #leave-one-out
 nEstimators = 1000 #1000 #number of estimators for random forest classifier
@@ -220,14 +220,14 @@ for i in range(nModels):
    elif runBag:
        data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams, gramsOnly)
        countFreq = np.sum(data, axis=0)
-
+       print countFreq, featureNames
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-    #    myfile = open(csvName, 'wb')
-    #    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-    #    wr.writerow(countFreq)
-    #    wr.writerow(featureNames)
+       #myfile = open('NYU_AD_2letter_quadgrams_BoW', 'wb')
+       #wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+       #wr.writerow(countFreq)
+       #wr.writerow(featureNames)
 
 
    elif runDoc2Vec:
