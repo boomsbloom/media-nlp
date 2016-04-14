@@ -7,33 +7,68 @@ from sklearn import decomposition, manifold, svm, grid_search, metrics
 from sklearn.ensemble import RandomForestClassifier
 from decimal import *
 import numpy as np
+from operator import itemgetter
 from unsupervised import bagOfWords
 from sklearn.linear_model import ElasticNet, ElasticNetCV
 
 
-def eNetModel(data, labels, nFolds):
+def featureSelection(train_text, train_docs):
+    # select by word frequency in training set and return only top 100 words
+    data_train, newVocab, feats_train = bagOfWords(train_text, train_docs, False, 0, False, False)
+    counts = np.sum(data_train, axis=0)
+    sorted_feats = [x for (y,x) in sorted(zip(counts,feats_train),reverse=True)]
+    return sorted_feats[:149]
+
+
+def sortBySelected(data_list, selected_feats, featureNames):
+    new_list = [[]] * len(data_list)
+    for t in range(len(data_list)):
+        data_t = []
+        for f in range(len(featureNames)):
+            if featureNames[f] in selected_feats:
+                data_t.append(data_list[t][f])
+        new_list[t] = data_t
+    return new_list
+
+def getSelectedFeatures(train, test, texts, featureNames, documents):
+    train_text = list(itemgetter(*train)(texts))
+    test_text = [itemgetter(*test)(texts)]
+
+    train_docs = {}
+    for txt in train_text:
+        train_docs[txt] = documents[txt]
+
+    selected_feats = featureSelection(train_text, train_docs)
+
+    return selected_feats
+
+def eNetModel(data, labels, featureNames, texts, documents, nFolds):
     # run SVM with grid search for parameters and leave-one-out cross validation
-    kf = KFold(len(data), n_folds=nFolds)
+    kf = KFold(len(texts), n_folds=nFolds)
     acc = 0
     for train, test in kf:
-       data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
-       enet = ElasticNetCV(l1_ratio=[.1, .5, .7, .9, .95, .99, 1],n_alphas=1000,alphas=[0.0125, 0.025, 0.05, .125, .25, .5, 1., 2., 4.])
+        # test_docs = {}
+        selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents)
 
-       enet.fit(data_train, label_train)
+        full_train_data, full_test_data, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
-       #if label_test == enet.predict(data_test):
-       if label_test == 1 and enet.predict(data_test) > 0.5:
-           acc += 1
-       elif label_test == 0 and enet.predict(data_test) < 0.5:
-           acc += 1
+        data_train = sortBySelected(full_train_data, selected_feats, featureNames)
+        data_test = sortBySelected(full_test_data, selected_feats, featureNames)
+
+        enet = ElasticNetCV(l1_ratio=[.1, .5, .7, .9, .95, .99, 1],n_alphas=1000,alphas=[0.0125, 0.025, 0.05, .125, .25, .5, 1., 2., 4.])
+
+        enet.fit(data_train, label_train)
+
+        #if label_test == enet.predict(data_test):
+        if label_test == 1 and enet.predict(data_test) > 0.5:
+            acc += 1
+        elif label_test == 0 and enet.predict(data_test) < 0.5:
+            acc += 1
 
     return Decimal(acc)/Decimal(len(data))
 
-
-
-
-def svmModel(data, labels, nFolds):
+def svmModel(data, labels, featureNames, texts, documents, nFolds):
     #print bagIt
     param_grid = [
       {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
@@ -44,15 +79,16 @@ def svmModel(data, labels, nFolds):
     kf = KFold(len(data), n_folds=nFolds)
     acc = 0
     for train, test in kf:
-    #   scripts = []
-    #   documents = {}
-    #   for i in train:
-    #       scripts.append(bagIt[0][i])
-    #       documents[bagIt[0][i]] = bagIt[1][bagIt[0][i]]
 
-       #Traindata, newVocab, featureNames = bagOfWords(scripts, documents, bagIt[2], bagIt[3])
-       data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
+       #data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
        #data_train, data_test, label_train, label_test = Traindata, data[test], labels[train], labels[test]
+
+       selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents)
+
+       full_train_data, full_test_data, label_train, label_test = data[train], data[test], labels[train], labels[test]
+
+       data_train = sortBySelected(full_train_data, selected_feats, featureNames)
+       data_test = sortBySelected(full_test_data, selected_feats, featureNames)
 
        svr = svm.SVC()
        clf = grid_search.GridSearchCV(svr, param_grid)
@@ -68,7 +104,7 @@ def svmModel(data, labels, nFolds):
 
 
 
-def rfModel(data, labels, nFolds, nEstimators):
+def rfModel(data, labels, featureNames, texts, documents, nFolds, nEstimators):
 
     kf = KFold(len(data), n_folds=nFolds)
     acc = 0
@@ -76,7 +112,13 @@ def rfModel(data, labels, nFolds, nEstimators):
     std = [[]] * len(data)
     count = 0
     for train, test in kf:
-       data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
+       #data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
+       selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents)
+
+       full_train_data, full_test_data, label_train, label_test = data[train], data[test], labels[train], labels[test]
+
+       data_train = sortBySelected(full_train_data, selected_feats, featureNames)
+       data_test = sortBySelected(full_test_data, selected_feats, featureNames)
 
        rf = RandomForestClassifier(n_estimators=nEstimators)
        rf.fit(data_train, label_train)
@@ -84,7 +126,7 @@ def rfModel(data, labels, nFolds, nEstimators):
        if label_test == rf.predict(data_test):
            acc += 1
 
-      # print label_test, rf.predict(data_test)
+       #print label_test, rf.predict(data_test)
        importances[count] = rf.feature_importances_
        std[count] = np.std([tree.feature_importances_ for tree in rf.estimators_], axis=0)
        #indices = np.argsort(importances)[::-1]

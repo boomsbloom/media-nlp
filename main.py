@@ -58,13 +58,13 @@ nGrams = 10 # number of words in context ..only if running context calculation
 # for LDA
 runLDA = False # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
-nTopics = 10 # number of topics to create
-nWords = 20 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
-nIters = 500 # number of iterations for sampling
+nTopics = 20 # number of topics to create
+nWords = 10 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nIters = 1000 # number of iterations for sampling
 
 # for HDP
 runHDP = False  # whether to run HDP
-tLimit = 150 # limit on number of topics to look for (default is 150)
+tLimit = 150#150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
 # for DTM
@@ -179,12 +179,14 @@ for i in range(nModels):
        print "Topic Modeling (HDP)...\n"
 
        if mincount != 0:
-           data, reducedDocuments, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount)
+           data, reducedDocuments, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams, gramsOnly)
 
            indivProbs[i] = hdpModel(scripts, reducedDocuments, tLimit, runClassification)
        else:
            indivProbs[i] = hdpModel(scripts, documents, tLimit, runClassification)
        data = np.asarray(indivProbs[i])
+
+       print data
 
    elif runDTM:
        print "Topic Modeling (DTM)...\n"
@@ -220,11 +222,11 @@ for i in range(nModels):
    elif runBag:
        data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams, gramsOnly)
        countFreq = np.sum(data, axis=0)
-       print countFreq, featureNames
+       #print countFreq, featureNames
        forBag = [scripts, documents, nGramsinCorpus, mincount]
        # need to run this in my LOOCV because using test doc in feature selection corpus
 
-       #myfile = open('NYU_AD_2letter_quadgrams_BoW', 'wb')
+       #myfile = open('NYU_TD_4letter_half_BoW', 'wb')
        #wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
        #wr.writerow(countFreq)
        #wr.writerow(featureNames)
@@ -252,17 +254,18 @@ for i in range(nModels):
 
    if not runDTM:
        print "Running Elastic Net...\n"
-       enetACC[i] = eNetModel(data, labels, nFolds)
+       enetACC[i] = eNetModel(data,labels,featureNames,scripts, documents, nFolds)
+       #enetACC[i] = eNetModel(data, labels, nFolds, featureNames)
        print "eNet ACC:", enetACC[i], "\n"
        #
        #
        print "Running SVM...\n"
-       svmACC[i] = svmModel(data, labels, nFolds)
+       svmACC[i] = svmModel(data,labels,featureNames,scripts, documents, nFolds)
        #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
        print "svm ACC:", svmACC[i], "\n"
 
        print "Running RF with %i estimators...\n" %(nEstimators)
-       rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators)
+       rfACC[i], importances[i], stds[i] = rfModel(data,labels,featureNames,scripts, documents, nFolds, nEstimators)
        #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
        idx = (-importances[i]).argsort()[:10]
 
