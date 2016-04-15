@@ -18,9 +18,9 @@ from unsupervised import *
 
 #path = 'texts/multiple_sites_half/PKU/both'
 #path = 'texts/multiple_sites_full/OHSU/both'
-#path = 'texts/multiple_sites_half/all_data'
+path = 'texts/multiple_sites_half/all_data'
 #path = 'texts/multiple_sites_half/NYU_and_PKU'
-path = 'texts/multiple_sites_half/NYU/both'
+#path = 'texts/multiple_sites_half/NYU/both'
 #path = 'texts/multiple_sites_full_2letter/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/all_data'
 #path = 'texts/multiple_sites_full_2letter/NYU_PKU'
@@ -101,8 +101,8 @@ mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise word
 runDoc2Vec = False
 
 # for classification
-nLabelOne = 40#70#90#40#70#30 #number of TDs
-nLabelTwo = 40#70#90#40#70#30 #number of ADs
+nLabelOne = 90#70#90#40#70#30 #number of TDs
+nLabelTwo = 90#70#90#40#70#30 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 nFolds = len(labels) #leave-one-out
 nEstimators = 1000 #1000 #number of estimators for random forest classifier
@@ -153,9 +153,9 @@ importances = [[]] * nModels
 stds = [[]] * nModels
 a = 0
 for i in range(nModels):
-   print "=================================="
-   print "Running Models for Iteration # %i" %(i+1)
-   print "==================================\n"
+   print "===================================================================================="
+   print "Running Models for Iteration # %i on %s" %(i+1, path)
+   print "====================================================================================\n"
    if runLDA:
        print "Topic Modeling (LDA)..\n"
 
