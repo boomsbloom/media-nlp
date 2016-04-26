@@ -190,10 +190,10 @@ def plot_BoW():
     #AD_freqs = loadCSV('AD_4words_half')
     #TD_freqs = loadCSV('TD_4words_half')
 
-    #AD_freqs = loadCSV('NYU_AD_2letter_bigrams_BoW')
-    #TD_freqs = loadCSV('NYU_TD_2letter_bigrams_BoW')
-    AD_freqs = loadCSV('NYU_AD_2letter_trigrams_BoW')
-    TD_freqs = loadCSV('NYU_TD_2letter_trigrams_BoW')
+    AD_freqs = loadCSV('NYU_AD_2letter_bigrams_BoW')
+    TD_freqs = loadCSV('NYU_TD_2letter_bigrams_BoW')
+    #AD_freqs = loadCSV('NYU_AD_2letter_trigrams_BoW')
+    #TD_freqs = loadCSV('NYU_TD_2letter_trigrams_BoW')
 
 
     #AD_freqs = loadCSV('AD_5letter_half')
@@ -232,21 +232,30 @@ def plot_BoW():
     word_list = []
     #sub_list = ['bbcb','bccc','bccb','bbcc','bbcb','','','','','']
     #uncorrected_significant = ['aaaa_abaa', 'aaaa_abab', 'aaaa_abba', 'aaaa_abbb', 'aaaa_baba', 'aaab_baba', 'aaab_babb', 'aaab_bbaa', 'aaba_babb', 'aabb_aaba', 'abab_bbbb', 'abba_aaaa', 'abbb_abaa', 'abbb_babb', 'abbb_bbbb', 'baaa_abbb', 'baab_aaba', 'baab_abab', 'baab_baaa', 'baba_aabb', 'baba_bbab', 'babb_aabb', 'babb_baab', 'bbab_bbab', 'bbba_babb', 'bbbb_abab', 'bbbb_bbab', 'bbbb_bbbb']
-    uncorrected_significant = ['aaaa_aaaa_bbbb', 'aaaa_aaba_bbaa', 'aaaa_abab_abbb', 'aaaa_baaa_aaaa', 'aaaa_baba_abbb', 'aaba_baab_baab', 'aaba_baab_bbab', 'abaa_baaa_baab', 'abba_aaaa_abbb', 'abba_baaa_babb', 'abba_baab_baaa', 'abba_baab_bbbb', 'abbb_aaba_aaaa', 'abbb_abbb_aaaa', 'abbb_baaa_baba', 'abbb_bbbb_bbab', 'abbb_bbbb_bbba', 'baaa_abaa_bbab', 'baaa_abba_aaaa', 'baaa_abbb_aabb', 'baaa_baab_bbba', 'baaa_bbbb_abbb', 'baab_aaba_aaba', 'baab_aabb_bbbb', 'baba_aaaa_bbaa', 'baba_baaa_baaa', 'babb_bbaa_aaba', 'bbaa_abbb_bbbb', 'bbab_baaa_baaa', 'bbbb_aaaa_babb', 'bbbb_abbb_aabb', 'bbbb_abbb_bbbb', 'bbbb_baaa_bbbb', 'bbbb_bbab_aaaa', 'bbbb_bbbb_aaaa', 'bbbb_bbbb_abbb', 'bbbb_bbbb_baaa']
-    for w in range(len(AD_freqs[0])):
+    #uncorrected_significant = ['aaaa_aaaa_bbbb', 'aaaa_aaba_bbaa', 'aaaa_abab_abbb', 'aaaa_baaa_aaaa', 'aaaa_baba_abbb', 'aaba_baab_baab', 'aaba_baab_bbab', 'abaa_baaa_baab', 'abba_aaaa_abbb', 'abba_baaa_babb', 'abba_baab_baaa', 'abba_baab_bbbb', 'abbb_aaba_aaaa', 'abbb_abbb_aaaa', 'abbb_baaa_baba', 'abbb_bbbb_bbab', 'abbb_bbbb_bbba', 'baaa_abaa_bbab', 'baaa_abba_aaaa', 'baaa_abbb_aabb', 'baaa_baab_bbba', 'baaa_bbbb_abbb', 'baab_aaba_aaba', 'baab_aabb_bbbb', 'baba_aaaa_bbaa', 'baba_baaa_baaa', 'babb_bbaa_aaba', 'bbaa_abbb_bbbb', 'bbab_baaa_baaa', 'bbbb_aaaa_babb', 'bbbb_abbb_aabb', 'bbbb_abbb_bbbb', 'bbbb_baaa_bbbb', 'bbbb_bbab_aaaa', 'bbbb_bbbb_aaaa', 'bbbb_bbbb_abbb', 'bbbb_bbbb_baaa']
+    #uncorrected_significant = ['ccdd', 'adbb', 'bddd', 'abba', 'acad', 'acaa', 'bdbb', 'ccbd', 'bbac', 'bccc', 'bbad', 'daaa', 'caab', 'bcdd', 'dbaa', 'adca', 'dcdd', 'dcaa', 'bcab', 'dddd', 'aaba', 'caca', 'bbbb', 'dbdb', 'aaaa', 'abbc', 'cdcc', 'ccad', 'dacb']
+    #print len(uncorrected_significant)
+    #uncorrected_significant = ['bbba_babb','aaaa_abaa','bbab_bbab','baaa_abbb','abbb_bbbb','aaaa_abbb'
+    #                            ,'baab_aabb','babb_aaba','bbab_abab','abab_aaaa']
+    uncorrected_significant = [u'bbba_babb', u'aaaa_abaa', u'bbab_bbab', u'baaa_abbb', u'abbb_bbbb', u'aaaa_abbb', u'baab_aabb', u'babb_aaba', u'bbab_abab', u'abab_aaaa', u'abbb_abaa', u'abbb_babb', u'abab_abab', u'baab_aaba', u'baab_baaa', u'babb_bbaa', u'aaba_aaba', u'baab_abab', u'babb_aabb', u'abab_bbbb', u'bbbb_abab', u'abbb_aaaa', u'aaba_bbbb', u'aaaa_baaa', u'aaaa_baba', u'babb_bbab', u'abbb_aabb', u'aabb_abaa', u'aaab_baba', u'baba_abba', u'babb_aaaa', u'abbb_abba', u'babb_aaab', u'aaab_bbaa', u'bbab_bbbb', u'bbbb_baba', u'bbbb_abbb', u'baba_bbab', u'aaba_abbb', u'bbbb_bbbb', u'baaa_baaa', u'baab_aaaa', u'bbba_aaaa', u'aaab_abbb', u'abbb_baab', u'aaaa_abba', u'bbbb_bbab', u'abba_babb', u'babb_baab', u'aaab_abaa']
+    vocab = list(set(TD_freqs[1]+AD_freqs[1]))
+
+    vocab_dict = {"AD":dict((word,[]) for word in vocab),"TD":dict((word,[]) for word in vocab)}
+
+
+    for w in range(len(vocab)):
         #if (TD_freqs[1][w][2] == 'c' or TD_freqs[1][w][2] == 'd') and (TD_freqs[1][w][3] == 'c' or TD_freqs[1][w][3] == 'd') and (TD_freqs[1][w][1] == 'c' or TD_freqs[1][w][1] == 'd')  and (TD_freqs[1][w][0] == 'c' or TD_freqs[1][w][0] == 'd'):
         #if (AD_freqs[1][w][0] == 'a' or AD_freqs[1][w][0] == 'b') and (AD_freqs[1][w][1] == 'c' or AD_freqs[1][w][1] == 'd'):
         #if (TD_freqs[1][w][0:4] == 'aaaa'):
-        if TD_freqs[1][w] in uncorrected_significant:
+        if vocab[w] in uncorrected_significant:
             #if TD_freqs[1][w] in sub_list: #not in
-            word_list.append(TD_freqs[1][w])
-    print word_list
+            word_list.append(vocab[w])
 
     def sortByWords(l):
         f1 = []
         f2 = []
         for w in range(len(l[1])):
-            print l[1][w]
+            #print l[1][w]
             if l[1][w] in word_list:
                 f1.append(l[0][w])
                 f2.append(l[1][w])
@@ -256,6 +265,11 @@ def plot_BoW():
     #TD_freqs[0] = TD_freqs[0][0:30]#[0:30]#[0:30]
     AD_freqs = sortByWords(AD_freqs)
     TD_freqs = sortByWords(TD_freqs)
+
+    no_occurrence = [word for word in TD_freqs[1] if word not in AD_freqs[1]]
+    for word in no_occurrence:
+        AD_freqs[1].append(word)
+        AD_freqs[0].append(0.0)
 
     def TDbyTopAD():
         f1 = []
@@ -340,17 +354,25 @@ def plot_BoW():
     # plotWordDist(TD_freqs[1], diffs)
 
 
-    #
+    # sort by top freq
+    by_enet_coef = []
+    for w in range(len(uncorrected_significant)):
+        for w2 in range(len(TD_freqs[1])):
+            if TD_freqs[1][w2] == uncorrected_significant[w]:
+                by_enet_coef.append(diffs[w2])
+
     fig, ax = plt.subplots()
     axes = fig.gca()
     index = np.arange(len(TD_freqs[0]))
-    td_bar = ax.bar(index,diffs,color='g') #s=20 should be abstracted to number of words in topics
-    bar_width = 0.35
+    #td_bar = sns.barplot(index,diffs) #s=20 should be abstracted to number of words in topics
+    td_bar = ax.bar(index,by_enet_coef) #s=20 should be abstracted to number of words in topics
+    bar_width = 0.4
     plt.xticks(index + bar_width, (map(str,range(len(TD_freqs[0])))))
-    ax.set_xticklabels(TD_freqs[1])
+    #ax.set_xticklabels(TD_freqs[0])
+    ax.set_xticklabels(uncorrected_significant)
     for label in ax.get_xticklabels():
       label.set_rotation(90)
-    axes.set_ylim([-15,15]) #0, 550
+    axes.set_ylim([-35,35]) #0, 550
     #sns.plt.title("AD Top 100 states by word count (AD - TD)")
     sns.plt.title("AD - TD")
 
