@@ -18,12 +18,12 @@ from unsupervised import *
 
 #path = 'texts/multiple_sites_half/PKU/both'
 #path = 'texts/multiple_sites_full/OHSU/both'
-path = 'texts/multiple_sites_half/all_data'
+#path = 'texts/multiple_sites_half/all_data'
 #path = 'texts/multiple_sites_half/NYU_and_PKU'
-#path = 'texts/multiple_sites_half/NYU/both'
+#path = 'texts/multiple_sites_half/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/all_data'
-#path = 'texts/multiple_sites_full_2letter/NYU_PKU'
+path = 'texts/multiple_sites_full_2letter/NYU/both'
 #path = 'texts/ADHD_various_half/2_word/'
 
 title = "TD letter counts"
@@ -87,7 +87,7 @@ runWord2Vec = False
 
 # for bag of words classification
 runBag = True
-nGramsinCorpus = False #True
+nGramsinCorpus = True #True
 windowGrams = False
 gramsOnly = False
 mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise words
@@ -101,8 +101,8 @@ mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise word
 runDoc2Vec = False
 
 # for classification
-nLabelOne = 90#70#90#40#70#30 #number of TDs
-nLabelTwo = 90#70#90#40#70#30 #number of ADs
+nLabelOne = 40#70#90#40#70#30 #number of TDs
+nLabelTwo = 40#70#90#40#70#30 #number of ADs
 labels  = np.asarray([0] * nLabelOne + [1] * nLabelTwo)
 nFolds = len(labels) #leave-one-out
 nEstimators = 1000 #1000 #number of estimators for random forest classifier
@@ -150,6 +150,7 @@ rfACC = [0] * nModels
 kACC = [0] * nModels
 enetACC = [0] * nModels
 importances = [[]] * nModels
+mean_coefs = [[]] * nModels
 stds = [[]] * nModels
 a = 0
 for i in range(nModels):
@@ -251,29 +252,39 @@ for i in range(nModels):
        #print " "
 
    ###### CLASSIFICATION #######
+   n_top_features = 10
 
    if not runDTM:
        print "Running Elastic Net...\n"
-       enetACC[i] = eNetModel(data,labels,featureNames,scripts, documents, nFolds)
+       enetACC[i], mean_coefs[i] = eNetModel(data,labels,featureNames,scripts, documents, nFolds)
        #enetACC[i] = eNetModel(data, labels, nFolds, featureNames)
        print "eNet ACC:", enetACC[i], "\n"
+
+       mean_coefs[i] = abs(mean_coefs[i])
+
+       idx = (-mean_coefs[i]).argsort()[:n_top_features]
+
+       print "Top %s features:"%(str(n_top_features))
+       for j in idx:
+           print (featureNames[j], mean_coefs[i][j])
+
        #
        #
-       print "Running SVM...\n"
-       svmACC[i] = svmModel(data,labels,featureNames,scripts, documents, nFolds)
-       #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
-       print "svm ACC:", svmACC[i], "\n"
-
-       print "Running RF with %i estimators...\n" %(nEstimators)
-       rfACC[i], importances[i], stds[i] = rfModel(data,labels,featureNames,scripts, documents, nFolds, nEstimators)
-       #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
-       idx = (-importances[i]).argsort()[:10]
-
-       print "Top 10 features:"
-       #for j in idx:
-        #   print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
-
-       print "\nrf ACC:", rfACC[i], "\n"
+    #    print "Running SVM...\n"
+    #    svmACC[i] = svmModel(data,labels,featureNames,scripts, documents, nFolds)
+    #    #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
+    #    print "svm ACC:", svmACC[i], "\n"
+       #
+    #    print "Running RF with %i estimators...\n" %(nEstimators)
+    #    rfACC[i], importances[i], stds[i] = rfModel(data,labels,featureNames,scripts, documents, nFolds, nEstimators)
+    #    #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
+    #    idx = (-importances[i]).argsort()[:10]
+       #
+    #    print "Top 10 features:"
+    #    #for j in idx:
+    #     #   print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
+       #
+    #    print "\nrf ACC:", rfACC[i], "\n"
 
 if not runDTM:
     print "=================================="
@@ -283,112 +294,4 @@ if not runDTM:
     #    print "kmeans acc mean:", np.mean(kACC)
     #print "enet acc mean:", np.mean(enetACC)
     #print "svm acc mean:", np.mean(svmACC)
-    print "rf acc mean:", np.mean(rfACC)
-
-
-###################################################################
-# plotting word usage across topics w/ different number of words  #
-###################################################################
-
-#
-# commonWords = [[]]
-# for i in range(len(topics)):
-#     if i != len(topics)-1:
-#         max_index, max_value = max(enumerate(topicProbs[i]), key=operator.itemgetter(1))
-#         max_index2, max_value2 = max(enumerate(topicProbs[i+1]), key=operator.itemgetter(1))
-#         commonWords[0].append([word for word in topics[i][max_index] if word in set(topics[i+1][max_index2])])
-# commonWords = (sum(sum(commonWords,[]),[]))
-#
-# wordcount={}
-# for word in commonWords:
-#     if word and word in wordcount:
-#         wordcount[word] += 1
-#     else:
-#         wordcount[word] = 1
-#
-# sorted_wordcount = sorted(wordcount.items(), key=operator.itemgetter(1))
-#
-# fig, ax = plt.subplots()
-# index = np.arange(len(sorted_wordcount))
-# words = []
-# counts = []
-# for i in range(len(sorted_wordcount)):
-#     words.append(sorted_wordcount[i][0])
-#     counts.append(sorted_wordcount[i][1])
-#
-# ax.bar(index,counts) #s=20 should be abstracted to number of words in topics
-# bar_width = 0.35
-# plt.xticks(index + bar_width, words)
-# plt.show()
-
-
-
-
-
-#THIS STEP TAKES FAR TOO LONG
-#Q = QbyContextinTopic(topics, contexts, scripts, nWords) # get co-occurrence matrix based on context words for each topic
-#print Q
-
-#sim = f.makeSim(Q) # make similarity matrix from Q
-
-#f.mdsModel(sim, topics) # run MDS and plot results
-
-#Q = QbyContextinDoc(documents, contexts, nGrams)
-#print Q
-
-#similarities = f.makeSim(topics,contexts,scripts,'byTopic')
-#similarities = f.makeSim(documents,contexts,scripts,'general')
-
-#f.nmfModelwAnchors(scripts, documents, nTopics)
-#f.mdsModel(similarities, topics)
-
-#print sim_df
-#print contexts
-#print topics
-#for text in scripts:
-#    print (contexts[text])
-
-# wordCounts = f.wordCount(scripts)
-#
-# offset = 5
-# topWords = {}
-# topCounts = {}
-# common = []
-# for script in scripts:
-#     counts ={}
-#     words = [word[0] for word in wordCounts[script]]
-#     counts = [count[1] for count in wordCounts[script]]
-#     topWords[script] = words[len(words)-offset:len(words)]
-#     topCounts[script] = counts[len(counts)-offset:len(counts)]
-#
-#     print script, topWords[script], topCounts[script]
-
-# for script in scripts:
-#     for sc in scripts:
-#         if sc != script:
-#             common.append(list(set(top50words[sc]).intersection(top50words[script])))
-#
-# #common = sum(common, [])
-# print common
-#f.bagOfWords('texts/biglebowski_script.txt')
-
-
-#need to remove names of characters talking in script and also think of other noisy issues here
-    # running list of some issues here...
-    # dialects are used which would need to bee controlled for somehow
-    #       i.e. more a that = more of that
-
-
-#lebowski = f.wordCount('texts/biglebowski_script.txt')
-#nihilism = f.wordCount('texts/nihilism_iep.txt')
-
-#lebowskiWords = [x[0] for x in lebowski]
-#nihilismWords = [x[0] for x in nihilism]
-
-#offset = 300
-
-#x = lebowskiWords[len(lebowskiWords)-offset:len(lebowskiWords)]
-#y = nihilismWords[len(nihilismWords)-offset:len(nihilismWords)]
-
-#print lebowski
-#print len(lebowski), len(nihilism), list(set(x).intersection(y))
+    #print "rf acc mean:", np.mean(rfACC)

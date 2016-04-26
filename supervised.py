@@ -12,21 +12,26 @@ from operator import itemgetter
 from unsupervised import bagOfWords
 from sklearn.linear_model import ElasticNet, ElasticNetCV
 
+nFeats = 300
 
-def featureSelection(train_text, train_docs, label_train):
+def featureSelection(train_text, train_docs, label_train, nFeats):
     # select by word frequency in training set and return only top n words
-    data_train, newVocab, feats_train = bagOfWords(train_text, train_docs, False, 0, False, False)
+    data_train, newVocab, feats_train = bagOfWords(train_text, train_docs, True, 0, False, False)
+
     # counts = np.sum(data_train, axis=0)
     # sorted_feats = [x for (y,x) in sorted(zip(counts,feats_train),reverse=True)]
 
     # train a rf on the training set and use the top n important features as features for loocv
-    rf = RandomForestClassifier(n_estimators=1000)
-    rf.fit(data_train, label_train)
-    importances = rf.feature_importances_
-    importances = np.array(importances)
-    sorted_feats = [x for (y,x) in sorted(zip(importances,feats_train),reverse=True)]
+    # rf = RandomForestClassifier(n_estimators=1000)
+    # rf.fit(data_train, label_train)
+    # importances = rf.feature_importances_
+    # importances = np.array(importances)
+    # sorted_feats = [x for (y,x) in sorted(zip(importances,feats_train),reverse=True)]
 
-    return sorted_feats[:10]
+    # hack to turn off feature selection...
+    sorted_feats = feats_train
+
+    return sorted_feats[:nFeats]
 
 
 def sortBySelected(data_list, selected_feats, featureNames):
@@ -39,7 +44,7 @@ def sortBySelected(data_list, selected_feats, featureNames):
         new_list[t] = data_t
     return new_list
 
-def getSelectedFeatures(train, test, texts, featureNames, documents, train_label):
+def getSelectedFeatures(train, test, texts, featureNames, documents, train_label, nFeats):
     train_text = list(itemgetter(*train)(texts))
     test_text = [itemgetter(*test)(texts)]
 
@@ -47,7 +52,7 @@ def getSelectedFeatures(train, test, texts, featureNames, documents, train_label
     for txt in train_text:
         train_docs[txt] = documents[txt]
 
-    selected_feats = featureSelection(train_text, train_docs, train_label)
+    selected_feats = featureSelection(train_text, train_docs, train_label, nFeats)
 
     return selected_feats
 
@@ -55,11 +60,12 @@ def eNetModel(data, labels, featureNames, texts, documents, nFolds):
     # run SVM with grid search for parameters and leave-one-out cross validation
     kf = KFold(len(texts), n_folds=nFolds)
     acc = 0
+    mean_coefs = []
     for train, test in kf:
 
         # test_docs = {}
         label_train = labels[train]
-        selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents, label_train)
+        selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents, label_train, nFeats)
 
         full_train_data, full_test_data, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
@@ -70,13 +76,23 @@ def eNetModel(data, labels, featureNames, texts, documents, nFolds):
 
         enet.fit(data_train, label_train)
 
-        #if label_test == enet.predict(data_test):
+        data_train = np.asarray(data_train,dtype=float)
+        label_train = np.asarray(label_train,dtype=float)
+
+        vals = enet.path(data_train, label_train)
+        mean_coefs.append(np.mean(vals[1],axis=1))
+
         if label_test == 1 and enet.predict(data_test) > 0.5:
             acc += 1
         elif label_test == 0 and enet.predict(data_test) < 0.5:
             acc += 1
 
-    return Decimal(acc)/Decimal(len(data))
+        if len(mean_coefs) % 10 == 0:
+            print str(len(mean_coefs)), 'out of %s subs finished' %(str(len(data)))
+
+    mean_coefs = np.mean(np.array(mean_coefs), axis=0)
+
+    return Decimal(acc)/Decimal(len(data)), mean_coefs
 
 def svmModel(data, labels, featureNames, texts, documents, nFolds):
     #print bagIt
@@ -93,7 +109,7 @@ def svmModel(data, labels, featureNames, texts, documents, nFolds):
        #data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
        #data_train, data_test, label_train, label_test = Traindata, data[test], labels[train], labels[test]
        label_train = labels[train]
-       selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents, label_train)
+       selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents, label_train, nFeats)
 
        full_train_data, full_test_data, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
@@ -124,7 +140,7 @@ def rfModel(data, labels, featureNames, texts, documents, nFolds, nEstimators):
     for train, test in kf:
        #data_train, data_test, label_train, label_test = data[train], data[test], labels[train], labels[test]
        label_train = labels[train]
-       selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents, label_train)
+       selected_feats = getSelectedFeatures(train, test, texts, featureNames, documents, label_train, nFeats)
 
        full_train_data, full_test_data, label_train, label_test = data[train], data[test], labels[train], labels[test]
 
