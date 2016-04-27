@@ -12,8 +12,9 @@ from sklearn import cluster
 from decimal import *
 import numpy as np
 import pandas as pd
-import lda, nltk, time
+import lda, nltk, time, os
 from nltk.util import ngrams
+from processing import getDocuments
 
 def getKey(item):
     return item[1]
@@ -165,7 +166,6 @@ def doc2vecModel(texts):
 
     return feature_arrays
 
-
 def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
    textList = []
    for text in texts:
@@ -187,67 +187,38 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
                   bigramList.append('_'.join(item))
           textList.append(' '.join(bigramList))
        elif not nGram:
-           textList.append(" ".join(documents[text]))
+           wordList = []
+           for word in documents[text]:
+               contains_filtered_info = False
+               for char in word:
+                   if char == 'b' or char == 'c':
+                       contains_filtered_info = True
+               if not contains_filtered_info:
+                   wordList.append(word)
+           #textList.append(" ".join(documents[text]))
+           textList.append(" ".join(wordList))
+           #print wordList
        else:
            bigramList = []
            filteredDocList = []
            for item in ngrams(documents[text],2):
-               bigramList.append("_".join(item))
-        #   for item in nltk.bigrams(" ".join(documents[text]).split()):
-                #if 'bccc' in item or 'bbac' in item or 'aaba' in item or 'adca' in item or 'dbdb' in item:
-                #if ('bccc' in item and 'cbcd' in item) or ('bccc' in item and 'bbcc' in item) or ('bccc' in item and 'bbcb' in item):
-                #if 'bccc' in item or 'bddd' in item:
-                #if 'bbbb' in item or 'aaaa' in item or 'aaab' in item or 'abab' in item or 'baba' in item:
-        #            bigramList.append('_'.join(item))
-                # for word in item:
-                #     if (word[0] == 'a' and word[1] == 'b'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'b' and word[1] == 'a'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'b' and word[3] == 'a'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'a' and word[3] == 'b'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'a' and word[1] == 'a'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'a' and word[3] == 'a'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'b' and word[3] == 'b'):
-                #         bigramList.append('_'.join(item))
-                #     elif(word[0] == 'b' and word[1] == 'b'):
-                #         bigramList.append('_'.join(item))
+               keep_word = False
+               for word in item:
+                   if word == 'abbb':
+                       keep_word = True
+               keep_word = True #hack for switching between full set and filtered set
+               if keep_word:
+                   bigramList.append("_".join(item))
 
-                    # elif(word[0] == 'b' and word[1] == 'b' and word[2] == 'b' and word[3] == 'b'):
-                    #     bigramList.append('_'.join(item))
-                    # elif(word[0] == 'a' and word[1] == 'a' and word[2] == 'a' and word[3] == 'a'):
-                    #     bigramList.append('_'.join(item))
-
-                #for word in item:
-                #    if (word[0] == 'b') and (word[1] == 'c') and (word[3] == 'c') and w:
-        #               bigramList.append('_'.join(item))
-           #top_features = ['aaba','acaa','adca','bbac','bccb','bccc','bddd','caab','ccbd','dbdb']
-          # top_features = ['bccc','bddd','adca']#,'bddd','accc','addd']#,'bbac']#,'aaba','adca','bbac']
-           #top_features = ['cbad','cbac','bccc','acaa','acab','dbdb']#,'bcac','bcdc']
-           #top_features = ['bccc','bcac','bcbb','bccb','bcdc','bcca']
-           #top_features = ['bccc','bbac']
-           #top_features = ['bbac','bccc','aaba','adca','dbdb']
            top_features = []
            for word in documents[text]:
                if word in top_features:
-            #   if (word[0] == 'a' or word[0] == 'b') and (word[1] == 'c' or word[1] == 'd'):
-            #if (word[0] == 'b') and (word[1] == 'c') and (word[3] == 'c') and (word[2] == 'c'):
                    filteredDocList.append(word)
-            #   elif (word[0] == 'c' or word[0] == 'd') and (word[1] == 'a' or word[1] == 'b'):
-            #       filteredDocList.append(word)
-            #   elif (word[0] == 'a' or word[0] == 'b') and (word[3] == 'c' or word[3] == 'd'):
-            #       filteredDocList.append(word)
-            #   elif (word[0] == 'c' or word[0] == 'd') and (word[3] == 'a' or word[3] == 'b'):
-            #       filteredDocList.append(word)
            tempList = bigramList + filteredDocList#documents[text]
            textList.append(' '.join(tempList))
 
    #print textList
-   print "Creating bag of words model...\n"
+   #print "Creating bag of words model...\n"
 
    vectorizer = CountVectorizer(analyzer = "word", #Count or Tfidf Vectorizer
                                 tokenizer = None,
@@ -309,7 +280,7 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
 
        train_data_features = tdf.toarray() #convert to numpy array
 
-   print "number of words in vocabulary:", len(train_data_features[0]), "\n"
+   #print "number of words in vocabulary:", len(train_data_features[0]), "\n"
 #   normed_data_features = []
 #   for feature_list in train_data_features:
 #       normed_feats = [float(Decimal(num)/Decimal(sum(feature_list))) for num in feature_list]
@@ -318,16 +289,31 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
 #   train_data_features = np.array(normed_data_features)
    return train_data_features, reducedTextDic, featureNames
 
+def runBag(path):
+
+    textNames = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
+
+    scripts = sorted([os.path.join(path, fn) for fn in os.listdir(path)])
+    for script in scripts:
+        if '.DS_Store' in script:
+            scripts.remove(script)
+
+    documents = getDocuments(scripts, 'none', False, textNames)
+
+    data, newVocab, featureNames = bagOfWords(scripts, documents, True, 0, False, False)
+
+    return data, featureNames
+
 
 def hdpModel(texts, documents, tLimit, forClass):
 
     textList = []
-    bigramList = []
+    #bigramList = []
     for text in texts:
-    #     textList.append(documents[text])
-        for item in nltk.bigrams(" ".join(documents[text]).split()):
-            bigramList.append('_'.join(item))
-        textList.append(bigramList)
+        textList.append(documents[text])
+        #for item in nltk.bigrams(" ".join(documents[text]).split()):
+        #    bigramList.append('_'.join(item))
+        #textList.append(bigramList)
 
     if forClass:
 
@@ -344,7 +330,18 @@ def hdpModel(texts, documents, tLimit, forClass):
                 topicProb[prob[0]] = prob[1]
             topicProbs[text] = topicProb
         topics = hdp.print_topics(topics=151, topn=10)
-        print topics
+
+        # printing top topics
+        summed_topics = np.sum(topicProbs,0)
+        sorted_topics = sorted(np.sum(topicProbs,0), reverse=True)
+        top_topics = []
+        counter = 0
+        for ind in sorted_topics:
+            if ind != 0 and counter < 10:
+                top = int(np.where(summed_topics==ind)[0])
+                print topics[top]
+                top_topics.append(top)
+            counter += 1
 
         return topicProbs
 

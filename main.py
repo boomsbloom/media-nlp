@@ -16,7 +16,7 @@ from unsupervised import *
 ################ LOAD INPUT DATA ################
 #################################################
 
-#path = 'texts/multiple_sites_half/PKU/both'
+#path = 'texts/multiple_sites_half/NYU/both'
 #path = 'texts/multiple_sites_full/OHSU/both'
 #path = 'texts/multiple_sites_half/all_data'
 #path = 'texts/multiple_sites_half/NYU_and_PKU'
@@ -252,7 +252,7 @@ for i in range(nModels):
        #print " "
 
    ###### CLASSIFICATION #######
-   n_top_features = 10
+   n_top_features = 50
 
    if not runDTM:
        print "Running Elastic Net...\n"
@@ -264,27 +264,30 @@ for i in range(nModels):
 
        idx = (-mean_coefs[i]).argsort()[:n_top_features]
 
-       print "Top %s features:"%(str(n_top_features))
-       for j in idx:
-           print (featureNames[j], mean_coefs[i][j])
+    #    print "Top %s features:"%(str(n_top_features))
+    #    topfeats = []
+    #    for j in idx:
+    #        print (featureNames[j], mean_coefs[i][j])
+    #        topfeats.append(featureNames[j])
+    #    print topfeats
 
        #
        #
-    #    print "Running SVM...\n"
-    #    svmACC[i] = svmModel(data,labels,featureNames,scripts, documents, nFolds)
-    #    #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
-    #    print "svm ACC:", svmACC[i], "\n"
-       #
-    #    print "Running RF with %i estimators...\n" %(nEstimators)
-    #    rfACC[i], importances[i], stds[i] = rfModel(data,labels,featureNames,scripts, documents, nFolds, nEstimators)
-    #    #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
+       print "Running SVM...\n"
+       svmACC[i] = svmModel(data,labels,featureNames,scripts, documents, nFolds)
+       #svmACC[i] = svmModel(data, labels, nFolds, bagIt=forBag)
+       print "svm ACC:", svmACC[i], "\n"
+
+       print "Running RF with %i estimators...\n" %(nEstimators)
+       rfACC[i], importances[i], stds[i] = rfModel(data,labels,featureNames,scripts, documents, nFolds, nEstimators)
+       #rfACC[i], importances[i], stds[i] = rfModel(data, labels, nFolds, nEstimators, bagIt=forBag)
     #    idx = (-importances[i]).argsort()[:10]
        #
     #    print "Top 10 features:"
     #    #for j in idx:
     #     #   print (featureNames[j], importances[i][j]), "std: ", stds[i][j]
        #
-    #    print "\nrf ACC:", rfACC[i], "\n"
+       print "\nrf ACC:", rfACC[i], "\n"
 
 if not runDTM:
     print "=================================="
