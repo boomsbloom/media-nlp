@@ -11,7 +11,6 @@ from unsupervised import bagOfWords
 from unsupervised import runBag
 from processing import getDocuments
 
-
 def countFeatures(top_features):
 
     path = 'texts/multiple_sites_full_2letter/NYU/both'
@@ -61,48 +60,3 @@ def drop_features(n_feats):
     top_features = [u'bbba_babb', u'aaaa_abaa', u'bbab_bbab', u'baaa_abbb', u'abbb_bbbb', u'aaaa_abbb', u'baab_aabb', u'babb_aaba', u'bbab_abab', u'abab_aaaa', u'abbb_abaa', u'abbb_babb', u'abab_abab', u'baab_aaba', u'baab_baaa', u'babb_bbaa', u'aaba_aaba', u'baab_abab', u'babb_aabb', u'abab_bbbb', u'bbbb_abab', u'abbb_aaaa', u'aaba_bbbb', u'aaaa_baaa', u'aaaa_baba', u'babb_bbab', u'abbb_aabb', u'aabb_abaa', u'aaab_baba', u'baba_abba', u'babb_aaaa', u'abbb_abba', u'babb_aaab', u'aaab_bbaa', u'bbab_bbbb', u'bbbb_baba', u'bbbb_abbb', u'baba_bbab', u'aaba_abbb', u'bbbb_bbbb', u'baaa_baaa', u'baab_aaaa', u'bbba_aaaa', u'aaab_abbb', u'abbb_baab', u'aaaa_abba', u'bbbb_bbab', u'abba_babb', u'babb_baab', u'aaab_abaa']
     top_features = top_features[:n_feats]
     return top_features
-
-top_features = drop_features(26)
-
-reduced_feat = []
-for word in top_features:
-    #if (word[0] == 'a' and word[3] == 'b'): #or (word[5] == 'a' and word[8] == 'b'):
-        reduced_feat.append(word)
-
-top_features = reduced_feat
-
-summed_feats, melted_df = countFeatures(top_features)
-
-sns.barplot(data=summed_feats,y='words',x='value',hue='variable')
-plt.legend()
-plt.show()
-#
-sns.violinplot(data=melted_df,y='variable',x='value',hue='group',cut=0,inner="points")
-plt.legend()
-plt.xlim(0,6)
-plt.show()
-
-sns.barplot(data=melted_df,y='variable',x='value',hue='group',linewidth=0.5)
-plt.legend()
-plt.xlim(0,3)
-plt.show()
-
-word_counts = {'first':[],'second':[]}
-for word in top_features:
-    word_counts['first'].append(word[0:4])
-    word_counts['second'].append(word[5:9])
-
-word_counts = pd.DataFrame.from_dict(word_counts)
-
-print word_counts['first'].value_counts()
-print word_counts['second'].value_counts()
-
-#pd.DataFrame.hist(pd.Series.to_frame(word_counts['first'].value_counts()))
-#plt.show()
-
-
-
-
-
-#print summed_feats.index
-#
