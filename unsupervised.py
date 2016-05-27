@@ -3,10 +3,10 @@
 '''
 
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-#from gensim import corpora, models, similarities, utils
-#from gensim.models.doc2vec import LabeledSentence
-#from gensim.models import Doc2Vec
-#import gensim.models.wrappers as wrappers
+from gensim import corpora, models, similarities, utils
+from gensim.models.doc2vec import LabeledSentence
+from gensim.models import Doc2Vec
+import gensim.models.wrappers as wrappers
 from random import shuffle
 from sklearn import cluster
 from decimal import *
@@ -167,6 +167,7 @@ def doc2vecModel(texts):
     return feature_arrays
 
 def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
+
    textList = []
    for text in texts:
        if windowGrams:
@@ -189,12 +190,12 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
        elif not nGram:
            wordList = []
            for word in documents[text]:
-               contains_filtered_info = False
-               for char in word:
-                   if char == 'b' or char == 'c':
-                       contains_filtered_info = True
-               if not contains_filtered_info:
-                   wordList.append(word)
+            #    contains_filtered_info = False
+            #    for char in word:
+            #        if char == 'b' or char == 'c':
+            #            contains_filtered_info = True
+            #    if not contains_filtered_info:
+            wordList.append(word)
            #textList.append(" ".join(documents[text]))
            textList.append(" ".join(wordList))
            #print wordList
@@ -280,6 +281,27 @@ def bagOfWords(texts, documents, nGram, toReduce, windowGrams, gramsOnly):
 
        train_data_features = tdf.toarray() #convert to numpy array
 
+   means = np.mean(train_data_features,axis=0)
+   reducedTDF = []
+   reducedVocab = []
+   for m in range(len(means)):
+       if means[m] >= 0.5:
+          reducedVocab.append(featureNames[m])
+   for d in range(len(train_data_features)):
+       newTDF = []
+       for m in range(len(means)):
+           if means[m] >= 0.5:
+               newTDF.append(train_data_features[d][m])
+       reducedTDF.append(newTDF)
+   #train_data_features = np.asarray(reducedTDF)
+   #featureNames = reducedVocab
+
+          #for d in range(len(reducedTDF)):
+        #      reducedTDF[d].append(train_data_features[d][m])
+  # print len(reducedTDF[0])
+   #print np.asarray(reducedTDF)
+
+
    #print "number of words in vocabulary:", len(train_data_features[0]), "\n"
 #   normed_data_features = []
 #   for feature_list in train_data_features:
@@ -320,7 +342,7 @@ def hdpModel(texts, documents, tLimit, forClass):
         dictionary = corpora.Dictionary(textList)
         corpus = [dictionary.doc2bow(text) for text in textList]
 
-        hdp = models.HdpModel(corpus, dictionary, T=tLimit,kappa=0.6)
+        hdp = models.HdpModel(corpus, dictionary, T=150,gamma=100,kappa=0.1,K=1000)
         topicProbs = [[]] * len(texts)
         for text in range(len(texts)):
             topicProb = [0] * tLimit
@@ -373,8 +395,30 @@ def hdpModel(texts, documents, tLimit, forClass):
 
 
 def ldaModel(texts,topics,iters, nWords, documents):
-    vocab, dtm = getVocab(texts, documents)
-    #dtm, reducedTextDic, vocab = bagOfWords(texts, documents, True, 0, False, False)
+    #vocab, dtm = getVocab(texts, documents)
+    bi_dtm, bi_reducedTextDic, bi_vocab = bagOfWords(texts, documents, True, 0, False, False)
+    uni_dtm, uni_reducedTextDic, uni_vocab = bagOfWords(texts, documents, False, 0, False, False)
+
+    dtm = []
+    for sub in range(len(uni_dtm)):
+        dtm.append(np.concatenate((uni_dtm[sub], bi_dtm[sub])))
+    dtm = np.asarray(dtm)
+    vocab = uni_vocab + bi_vocab
+
+    dtm = bi_dtm
+    vocab = bi_vocab
+    # limit to those that appear in TDs at least once?
+    mean_occ = np.mean(dtm,axis=0)
+    cleaned_dtm = []
+    for sub in range(len(dtm)):
+        temp_cleaned = []
+        for occ in range(len(mean_occ)):
+            if mean_occ[occ] >= 0:
+                temp_cleaned.append(dtm[sub][occ])
+        cleaned_dtm.append(np.asarray(temp_cleaned))
+    cleaned_dtm = np.asarray(cleaned_dtm)
+
+    dtm = cleaned_dtm
 
     model = lda.LDA(n_topics=topics, n_iter=iters, random_state=1)
     model.fit(dtm)
@@ -392,7 +436,7 @@ def ldaModel(texts,topics,iters, nWords, documents):
     probs = np.array(doc_topic)
     meanProbs = np.mean(probs, axis=0)
 
-    return topic_words, meanProbs, probs
+    return topic_words, meanProbs, probs, vocab, dtm
 
 
 

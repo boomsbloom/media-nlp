@@ -23,7 +23,10 @@ from unsupervised import *
 #path = 'texts/multiple_sites_half/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/all_data'
-path = 'texts/multiple_sites_full_2letter/NYU/both'
+#path = 'texts/multiple_sites_full_2letter/NYU/both'
+path = 'texts/multiple_sites_full_2letter/NYU/TD_2'
+#path = 'texts/multiple_sites_full_2letter/NYU/both'
+
 #path = 'texts/ADHD_various_half/2_word/'
 
 title = "TD letter counts"
@@ -56,14 +59,14 @@ nModels = 10 # number of times you want modeling to run
 nGrams = 10 # number of words in context ..only if running context calculation
 
 # for LDA
-runLDA = False # whether to run LDA
+runLDA = True # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
-nTopics = 20 # number of topics to create
-nWords = 10 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nTopics = 5 # number of topics to create
+nWords = 11 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 1000 # number of iterations for sampling
 
 # for HDP
-runHDP = False  # whether to run HDP
+runHDP = False # whether to run HDP
 tLimit = 150#150 # limit on number of topics to look for (default is 150)
 # note: larger the limit on topics the more sparse the classification matrix
 
@@ -90,7 +93,7 @@ runBag = True
 nGramsinCorpus = True #True
 windowGrams = False
 gramsOnly = False
-mincount = 0 #30 #80 #150 #need massive number (like 3000) for network_wise words
+mincount = 1 #30 #80 #150 #need massive number (like 3000) for network_wise words
 # BEST: half_4letters + biGrams + 4 mincount + RF w/ 1000 estimators gives mean: 0.825 (vocab of 248 words)
 ###### without biGrams: (vocab of 236 words) gives around 0.8
 
@@ -161,9 +164,10 @@ for i in range(nModels):
        print "Topic Modeling (LDA)..\n"
 
        nWords = nWords + a
-       topics[i], topicProbs[i], indivProbs[i]  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
+       topics[i], topicProbs[i], indivProbs[i], featureNames, dtm  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
        a += 1
-       data = np.asarray(indivProbs[i])
+       #data = np.asarray(indivProbs[i])
+       data = dtm
 
        ###############################
        # plotting mean probabilities #
@@ -221,7 +225,8 @@ for i in range(nModels):
        data = word2vecModel(scripts, documents)
 
    elif runBag:
-       data, newVocab, featureNames = bagOfWords(scripts, documents, nGramsinCorpus, mincount, windowGrams, gramsOnly)
+       data, newVocab, featureNames = bagOfWords(scripts, documents,
+       nGramsinCorpus, mincount, windowGrams, gramsOnly)
        countFreq = np.sum(data, axis=0)
        #print countFreq, featureNames
        forBag = [scripts, documents, nGramsinCorpus, mincount]
