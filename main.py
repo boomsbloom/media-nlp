@@ -24,8 +24,8 @@ from unsupervised import *
 #path = 'texts/multiple_sites_full_2letter/OHSU/both'
 #path = 'texts/multiple_sites_full_2letter/all_data'
 #path = 'texts/multiple_sites_full_2letter/NYU/both'
-path = 'texts/multiple_sites_full_2letter/NYU/TD_2'
-#path = 'texts/multiple_sites_full_2letter/NYU/both'
+#path = 'texts/multiple_sites_full_2letter/NYU/TD_2'
+path = 'texts/multiple_sites_full_2letter/NYU/both'
 
 #path = 'texts/ADHD_various_half/2_word/'
 
@@ -61,8 +61,8 @@ nGrams = 10 # number of words in context ..only if running context calculation
 # for LDA
 runLDA = True # whether to run LDA
 delimiter = 'none' #or ',' type of delimiter between your words in the document
-nTopics = 5 # number of topics to create
-nWords = 11 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
+nTopics = 6#10 # number of topics to create
+nWords = 27 #4 # number of words per topic; is actually n - 1 (so 3 for 2 words)
 nIters = 1000 # number of iterations for sampling
 
 # for HDP
@@ -166,8 +166,13 @@ for i in range(nModels):
        nWords = nWords + a
        topics[i], topicProbs[i], indivProbs[i], featureNames, dtm  = ldaModel(scripts,nTopics,nIters,nWords,documents) # run LDA to get topics
        a += 1
-       #data = np.asarray(indivProbs[i])
-       data = dtm
+    #    reducedProbs = []
+    #    for sub in indivProbs[i]:
+    #        reducedProbs.append(np.asarray([sub[3]]+[sub[4]]+[sub[6]]))
+    #    reducedProbs = np.asarray(reducedProbs)
+       #data = np.asarray(reducedProbs)
+       data = np.asarray(indivProbs[i])
+       #data = dtm
 
        ###############################
        # plotting mean probabilities #
